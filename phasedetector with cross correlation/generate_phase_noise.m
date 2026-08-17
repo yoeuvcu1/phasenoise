@@ -6,6 +6,8 @@ function phase_noise = generate_phase_noise(N, phase_rms)
     end
 
 
+    seed = mod(173*floor(time() * 1e6), 10000);
+    rng(seed)
     white = randn(N, 1);
     X_white = fft(white);
 
@@ -18,7 +20,7 @@ function phase_noise = generate_phase_noise(N, phase_rms)
     X_colored = X_white .* phase_noise_filter;
     unit_phase_noise = real(ifft(X_colored));
 
-    unit_phase_noise = unit_phase_noise - mean(unit_phase_noise);
+    unit_phase_noise = remove_dc(unit_phase_noise);
     unit_phase_noise = unit_phase_noise / std(unit_phase_noise);
 
     phase_noise = phase_rms * unit_phase_noise;
