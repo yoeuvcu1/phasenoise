@@ -1,55 +1,109 @@
 function plot_sweep_results(sweep_name, values, run_results, label_fmt, ...
     default_value, out_png, show_figure)
-% Bir taramadaki tüm koşuları tek grafikte üst üste çizer ve PNG olarak
-% kaydeder. Her değer için Cross-PSD (düz çizgi, ölçüm) ve DUT FFT
-% (kesikli çizgi, orijinal gürültü) eğrileri aynı renkle çizilir.
-% Başlıkta tarama dışındaki sabit parametreler gösterilir.
+% Bir taramadaki her bağımsız koşuyu ayrı subplot'ta çizer. Her subplot
+% yalnızca o koşunun Cross-PSD tahminini ve LPF-filtreli DUT
+% periodogramını içerir.
 %
-% values:       tarama değerleri vektörü
-% run_results:  her elemanı bir koşu sonucu olan cell dizi
-% label_fmt:    değerden etiket üreten sprintf biçimi (tek %d/%g alır)
-% default_value: orijinal parametre değeri (legend'de "(orig)" işaretlenir)
+% run_results sırası values sırasıyla eşleşmelidir. label_fmt subplot başlığında
+% test değerini biçimlendirir; default_value eşleşmesi "(orig)" olarak işaretlenir.
 
+% Değer sayısına yakın kare biçimli bir subplot matrisi seç.
 number_of_values = numel(values);
-color_map = lines(max(number_of_values, 7));
+number_of_columns = ceil(sqrt(number_of_values));
+number_of_rows = ceil(number_of_values / number_of_columns);
 
-try
-    fig = figure("visible", "off");
-catch
-    fig = figure;
+% Her axes kendi otomatik limitini kullansaydı küçük farklar olduğundan büyük
+% görünebilirdi; bu nedenle bütün subplot'lar için ortak X/Y sınırı hesapla.
+frequency_min = Inf;
+frequency_max = -Inf;
+level_min = Inf;
+level_max = -Inf;
+for value_index = 1:number_of_values
+    current_results = run_results{value_index};
+    frequencies = [current_results.cross.frequency_binned(:); ...
+        current_results.dut_fft.frequency_binned(:)];
+    levels = [current_results.cross.phase_noise_binned(:); ...
+        current_results.dut_fft.phase_noise_binned(:)];
+    valid_frequencies = frequencies(isfinite(frequencies) & frequencies > 0);
+    valid_levels = levels(isfinite(levels));
+    if ~isempty(valid_frequencies)
+        frequency_min = min(frequency_min, min(valid_frequencies));
+        frequency_max = max(frequency_max, max(valid_frequencies));
+    end
+    if ~isempty(valid_levels)
+        level_min = min(level_min, min(valid_levels));
+        level_max = max(level_max, max(valid_levels));
+    end
 end
-ax = axes(fig);
+if ~isfinite(frequency_min) || ~isfinite(frequency_max) || ...
+        ~isfinite(level_min) || ~isfinite(level_max)
+    error("Karsilastirma grafigi icin sonlu veri bulunamadi.");
+end
+% Eğrilerin çerçeveye yapışmaması için en az 1 dB dikey boşluk bırak.
+level_padding = max(1, 0.05*(level_max - level_min));
+
+% Kaydetme tamamlanana kadar pencereyi gizli tut; bu, sweep sırasında GUI
+% pencerelerinin art arda öne gelmesini önler.
+fig = figure("visible", "off", "position", ...
+    [50, 50, 520*number_of_columns, 360*number_of_rows]);
 
 for value_index = 1:number_of_values
+    % Her subplot tek bir bağımsız run içerir; farklı test değerleri üst üste çizilmez.
+    ax = subplot(number_of_rows, number_of_columns, value_index, ...
+        "Parent", fig);
     current_results = run_results{value_index};
     current_label = sprintf(label_fmt, values(value_index));
     if values(value_index) == default_value
         current_label = [current_label, " (orig)"];
     end
-    current_color = color_map(value_index, :);
 
+    % Aynı run'ın ölçüm tahmini ve DUT referansı iki farklı çizgi stiliyle gösterilir.
     semilogx(ax, current_results.cross.frequency_binned, ...
         current_results.cross.phase_noise_binned, ...
-        "-", "Color", current_color, "LineWidth", 2, ...
-        "DisplayName", sprintf("Cross-PSD %s", current_label));
+        "b-", "LineWidth", 2, ...
+        "DisplayName", "Cross-PSD estimate");
     hold(ax, "on");
     semilogx(ax, current_results.dut_fft.frequency_binned, ...
         current_results.dut_fft.phase_noise_binned, ...
-        "--", "Color", current_color, "LineWidth", 1.5, ...
-        "DisplayName", sprintf("DUT FFT (orijinal) %s", current_label));
+        "r--", "LineWidth", 1.5, ...
+        "DisplayName", "LPF-filtered DUT periodogram");
+
+    grid(ax, "on");
+    xlabel(ax, "Offset Frequency (Hz)");
+    ylabel(ax, "Phase Noise (dBc/Hz)");
+    xlim(ax, [frequency_min, frequency_max]);
+    ylim(ax, [level_min - level_padding, level_max + level_padding]);
+    % Başlıkta hem fiziksel config hem de o run'a ait sonuç metrikleri yer alır.
+    cfg = current_results.config;
+    config_details = sprintf( ...
+        "f_c %.1f kHz | DUT %.2f rad | Ref %.2f/%.2f rad", ...
+        cfg.lpf_cutoff/1e3, cfg.phase_rms_dut, ...
+        cfg.phase_rms_ref1, cfg.phase_rms_ref2);
+    run_details = sprintf( ...
+        "%d iter | %d bins | MAE %.3f dB | correction %.4f", ...
+        cfg.number_of_iterations, cfg.number_of_log_bins, ...
+        current_results.mean_absolute_error_fft_db, ...
+        current_results.correction_factor);
+    title(ax, {sprintf("%s | %s", sweep_name, current_label), ...
+        config_details, run_details}, "Interpreter", "none");
+    legend(ax, "location", "southwest", "FontSize", 7);
+    hold(ax, "off");
 end
 
-grid(ax, "on");
-xlabel(ax, "Offset Frequency (Hz)");
-ylabel(ax, "Phase Noise (dBc/Hz)");
+% Figürü ekran boyutuna uygun kağıt ölçüsüyle 150 DPI PNG olarak kaydet.
+% Grafik backend'i kaydedemezse simülasyon sonuçlarını kaybetmeden uyarı ver.
+try
+    set(fig, "paperpositionmode", "auto");
+    print(fig, out_png, "-dpng", "-r150");
+catch err
+    warning("PNG kaydedilemedi: %s", err.message);
+end
 
-cfg = run_results{1}.config;
-title(ax, sprintf( ...
-    "%s comparison | N=%d, f_c=%.0f Hz, DUT=%.2f rad, Ref=%.2f rad, %d iter, %d bin\n(düz: Cross-PSD olcumu, kesikli: orijinal DUT FFT, (orig): varsayilan parametre)", ...
-    sweep_name, cfg.N, cfg.lpf_cutoff, cfg.phase_rms_dut, ...
-    cfg.phase_rms_ref1, cfg.number_of_iterations, cfg.number_of_log_bins));
-legend(ax, "location", "northeast", "FontSize", 8);
-
-save_figure_to_png(fig, out_png, show_figure);
+% Batch modunda figürü kapat; GUI incelemesi istenmişse görünür yapıp açık bırak.
+if show_figure
+    set(fig, "visible", "on");
+else
+    close(fig);
+end
 
 end

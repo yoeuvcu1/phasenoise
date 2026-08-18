@@ -1,72 +1,44 @@
-% run_comparisons.m
-% =====================================================================
-% Simülasyon karşılaştırma koşu betiği (giriş noktası).
+% Cross-PSD karşılaştırmalarının kullanıcı arayüzü.
 %
-% Proje klasörü bir ağ paylaşımında (\\kutu\...) olduğu için Octave
-% buradan .m dosyalarını güvenilir şekilde yükleyemez. Bu nedenle
-% betik önce tüm .m dosyalarını yerel bir yansıma klasörüne kopyalar,
-% simülasyonu oradan koşar ve sonuçları (ham veri + grafik) doğrudan
-% projedeki results/ klasörüne yazar.
+% Akış:
+%   1. default_config tüm testlerde kullanılacak başlangıç ayarlarını tutar.
+%   2. test_values içindeki her değer bağımsız bir simülasyon koşusu başlatır.
+%   3. run_comparisons_main sonuçları ayrı klasörlere kaydedip karşılaştırır.
 %
-% NASIL ÇALIŞTIRILIR (cwd nerede olursa olsun):
-%   Octave komut satırından:
-%       run("O:\phasedetector with cross correlation optimized\run_comparisons.m")
-%   Veya CLI'den:
-%       octave-cli "O:\...\run_comparisons.m"
-%
-% NOT: PNG grafik üretimi qt altyapısıyla (Octave GUI) çalışır. CLI'den
-% koşturulursa ham veriler (.mat/.csv) yine kaydedilir, PNG'ler sonradan
-% Octave GUI'den replot_results ile çizilebilir.
-%
-% AYARLAR:
-%   Tüm simülasyon parametreleri ve tarama değerleri
-%   run_comparisons_main.m dosyasındaki "DEFAULT PARAMETRELER" ve
-%   "KOŞULACAK TARAMALAR" bölümlerinden düzenlenir.
-% =====================================================================
+% Bir testi kapatmak için ilgili test_values alanını [] yapın.
 
-SHOW_FIGURES = true;   % karşılaştırma grafiklerini ekranda göster
+%% Varsayılan simülasyon parametreleri
+default_config = struct();
+default_config.N = 10000;                % Örnek sayısı
+default_config.fs = 1e6;                   % Örnekleme frekansı (Hz)
+default_config.A = 1;                      % Taşıyıcı genliği
+default_config.f0 = 50e3;                  % Taşıyıcı frekansı (Hz)
+default_config.settling_samples = 600;     % LPF geçici rejimi için atılan örnek
+default_config.lpf_cutoff = 10e3;          % LPF kesim frekansı (Hz)
+default_config.lpf_order = 4;              % LPF derecesi
+default_config.phase_rms_dut = 0.2;        % DUT faz gürültüsü RMS (rad)
+default_config.phase_rms_ref1 = 0.05;      % Referans 1 RMS (rad)
+default_config.phase_rms_ref2 = 0.05;      % Referans 2 RMS (rad)
+default_config.number_of_iterations = 100; % Cross-PSD ortalama sayısı
+default_config.number_of_log_bins = 100;   % Logaritmik bin sayısı
 
+%% Test değerleri
+% Her satır tek bir parametreyi tarar; diğer parametreler default_config
+% değerinde kalır. rms_ref testi Ref1 ve Ref2 RMS değerlerini birlikte değiştirir.
+test_values = struct();
+test_values.lpf_cutoff = [5e3, 10e3, 25e3, 50e3];   % Hz
+test_values.rms_dut = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5];   % rad
+test_values.rms_ref = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]; % rad; iki referans birlikte değişir
+test_values.iterations = [1, 10, 50, 100, 200, 300];   % adet
+test_values.log_bins = [10, 25, 50, 80, 100, 200];      % adet
+
+show_figures = true; % Karşılaştırma figürlerini ekranda göster
+
+% Script başka bir çalışma klasöründen başlatılsa da proje fonksiyonlarını bul.
 project_dir = fileparts(mfilename("fullpath"));
-mirror_dir = fullfile(tempdir(), "octave_pd_mirror");
+addpath(project_dir);
 
-% .m dosyalarını yerel yansımaya kopyala (ağ yolundan yüklenemezler).
-% Eski dosyaları unlink ile sessizce temizle (GUI onay penceresi açmaz).
-if ~exist(mirror_dir, "dir")
-    mkdir(mirror_dir);
-end
-mirror_entries = dir(mirror_dir);
-for mirror_index = 1:numel(mirror_entries)
-    if ~mirror_entries(mirror_index).isdir
-        unlink(fullfile(mirror_dir, mirror_entries(mirror_index).name));
-    end
-end
-project_entries = dir(project_dir);
-for entry_index = 1:numel(project_entries)
-    entry = project_entries(entry_index);
-    if entry.isdir || length(entry.name) < 3
-        continue;
-    end
-    if ~strcmp(entry.name(end-1:end), ".m")
-        continue;
-    end
-    launcher_source_id = fopen(fullfile(project_dir, entry.name), "rb");
-    launcher_target_id = fopen(fullfile(mirror_dir, entry.name), "wb");
-    if launcher_source_id < 0 || launcher_target_id < 0
-        error("Yansima kopyalanamadi: %s", entry.name);
-    end
-    while ~feof(launcher_source_id)
-        launcher_chunk = fread(launcher_source_id, 65536, "uint8");
-        if isempty(launcher_chunk)
-            break;
-        end
-        fwrite(launcher_target_id, launcher_chunk, "uint8");
-    end
-    fclose(launcher_source_id);
-    fclose(launcher_target_id);
-end
-cd(mirror_dir);
-addpath(mirror_dir);
-
-run_comparisons_main(SHOW_FIGURES, project_dir);
+% Testleri çalıştır; ham spektrum, özet ve PNG üretimini ana yöneticide yap.
+run_comparisons_main(default_config, test_values, show_figures, project_dir);
 
 fprintf("\nHazir. Sonuclar: %s\n", fullfile(project_dir, "results"));
