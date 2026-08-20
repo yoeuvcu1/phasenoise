@@ -3,6 +3,14 @@
 Tarih: 2026-08-07
 Amaç: Aynı simülasyonun hız/okunabilirlik için optimize edilmiş kopyasındaki algoritmik ve yapısal farkları belgelemek. Orijinal klasör değiştirilmedi.
 
+> Güncel not (2026-08-19): Bu rapor 2026-08-07 durumunu belgeler. Aktif kodda
+> DUT artık her iterasyonda yeniden üretilir ve DUT periodogramları ortalanır;
+> güncel davranış için `MEMORY_BANK.md` dosyasına bakın.
+>
+> Güncel not (2026-08-20): Aktif kodun okunabilirlik refactor'unda mixer,
+> Butterworth LPF ve FFT tabanlı Cross-PSD ayrı fonksiyonlara taşındı. Aşağıdaki
+> "LPF run_simulation içindedir" ifadeleri yalnız 2026-08-07 durumunu anlatır.
+
 ## 1. Dosya Yapısı Farkları
 
 | Dosya | Durum | Açıklama |

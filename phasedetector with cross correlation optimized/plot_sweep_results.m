@@ -1,7 +1,7 @@
 function plot_sweep_results(sweep_name, values, run_results, label_fmt, ...
     default_value, out_png, show_figure)
 % Bir taramadaki her bağımsız koşuyu ayrı subplot'ta çizer. Her subplot
-% yalnızca o koşunun Cross-PSD tahminini ve LPF-filtreli DUT
+% yalnızca o koşunun Cross-PSD tahminini ve filtrelenmemiş DUT
 % periodogramını içerir.
 %
 % run_results sırası values sırasıyla eşleşmelidir. label_fmt subplot başlığında
@@ -20,10 +20,16 @@ level_min = Inf;
 level_max = -Inf;
 for value_index = 1:number_of_values
     current_results = run_results{value_index};
+    if isfield(current_results, "dut_fft_unfiltered")
+        dut_plot = current_results.dut_fft_unfiltered;
+    else
+        % Eski MAT sonuçlarında yalnızca filtreli DUT alanı bulunur.
+        dut_plot = current_results.dut_fft;
+    end
     frequencies = [current_results.cross.frequency_binned(:); ...
-        current_results.dut_fft.frequency_binned(:)];
+        dut_plot.frequency_binned(:)];
     levels = [current_results.cross.phase_noise_binned(:); ...
-        current_results.dut_fft.phase_noise_binned(:)];
+        dut_plot.phase_noise_binned(:)];
     valid_frequencies = frequencies(isfinite(frequencies) & frequencies > 0);
     valid_levels = levels(isfinite(levels));
     if ~isempty(valid_frequencies)
@@ -52,6 +58,18 @@ for value_index = 1:number_of_values
     ax = subplot(number_of_rows, number_of_columns, value_index, ...
         "Parent", fig);
     current_results = run_results{value_index};
+    if isfield(current_results, "dut_fft_unfiltered")
+        dut_plot = current_results.dut_fft_unfiltered;
+        if isfield(dut_plot, "number_of_averages")
+            dut_display_name = "Averaged unfiltered DUT periodogram";
+        else
+            dut_display_name = "Unfiltered DUT periodogram";
+        end
+    else
+        % Kayıtlı eski sonuçların yeniden çizilebilmesini sürdür.
+        dut_plot = current_results.dut_fft;
+        dut_display_name = "DUT periodogram (saved result)";
+    end
     current_label = sprintf(label_fmt, values(value_index));
     if values(value_index) == default_value
         current_label = [current_label, " (orig)"];
@@ -63,10 +81,10 @@ for value_index = 1:number_of_values
         "b-", "LineWidth", 2, ...
         "DisplayName", "Cross-PSD estimate");
     hold(ax, "on");
-    semilogx(ax, current_results.dut_fft.frequency_binned, ...
-        current_results.dut_fft.phase_noise_binned, ...
+    semilogx(ax, dut_plot.frequency_binned, ...
+        dut_plot.phase_noise_binned, ...
         "r--", "LineWidth", 1.5, ...
-        "DisplayName", "LPF-filtered DUT periodogram");
+        "DisplayName", dut_display_name);
 
     grid(ax, "on");
     xlabel(ax, "Offset Frequency (Hz)");

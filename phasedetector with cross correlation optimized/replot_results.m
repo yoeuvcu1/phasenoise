@@ -21,7 +21,7 @@
 %       RESULTS_SUBFOLDER = "20260807_123456_lpf_cutoff";
 % =====================================================================
 
-RESULTS_SUBFOLDER = "20260818_083403029_iterations";
+RESULTS_SUBFOLDER = "20260819_162451251_iterations";
 SHOW_FIGURES = true;   % karşılaştırma grafiğini ekranda göster
 
 % Proje ve results yollarını script'in bulunduğu konumdan türet.

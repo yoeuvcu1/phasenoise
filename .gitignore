@@ -1,0 +1,15 @@
+# Ignore everything by default, then allow project text files.
+*
+!*/
+!*.m
+!*.md
+!*.txt
+!*.csv
+!*.json
+!*.jsonc
+!*.yaml
+!*.yml
+!.gitignore
+
+# Generated simulation output must never be versioned.
+**/results/

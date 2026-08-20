@@ -16,8 +16,12 @@ Octave/  (workspace kökü)
 └── phasedetector with cross correlation optimized/ (AKTİF - üzerinde çalışılan)
     ├── run_single.m                 ← tek simülasyon giriş betiği ve grafiği
     ├── run_comparisons.m            ← parametre taraması giriş betiği
+    ├── run_iterations.m             ← yalnız iterasyon sayısı taraması
     ├── run_simulation.m             ← ana simülasyon akışı
-    ├── measure_iteration.m          ← tek iterasyonluk cross-PSD ölçümü (FFT tabanlı)
+    ├── measure_iteration.m          ← tek iterasyonda devre bloklarını bağlayan akış
+    ├── mixer.m                      ← DUT ile Ref1/Ref2 çarpım bloğu
+    ├── lowpass_filter.m             ← Butterworth LPF tasarımı ve uygulaması
+    ├── compute_cross_psd.m          ← FFT tabanlı korelasyon / Cross-PSD bloğu
     ├── generate_phase_noise.m       ← 1/f³ spektrumlu faz gürültüsü üretici
     ├── compute_periodogram.m        ← DUT referans PSD (tek taraflı)
     ├── logbin_phase_noise.m         ← log-bin + SSB dBc/Hz dönüşümü
@@ -33,6 +37,7 @@ Octave/  (workspace kökü)
 ```matlab
 run_single;                % tek simülasyon (ayarlar betiğin başındadır)
 run_comparisons;           % tanımlı parametre taramalarını çalıştırır
+run_iterations;            % yalnız number_of_iterations değerlerini tarar
 replot_results;            % kaydedilmiş taramaların grafiklerini yeniden çizer
 ```
 
@@ -41,10 +46,19 @@ Gereksinim: Octave `signal` paketi (`pkg load signal`, otomatik yüklenir).
 ## Önemli Algoritma Notları
 
 - **Cross-PSD (optimized):** `S_cross = fft(c1, nfft) .* conj(fft(c2, nfft)) / (fs·M)`, tek taraflıya çevrilip DC hariç ×2. nfft = `2^nextpow2(2·(N - settling) - 1)` (radix-2). Eski xcorr+ifftshift+fft zincirine eşdeğer, çok daha hızlı.
-- **İterasyon döngüsü:** DUT faz gürültüsü bir kez üretilir (`x_dut` sabit); referanslar her iterasyonda yeniden üretilir → korelasyonsuz gürültü söner.
-- **Faz detektörü:** `x_dut · x_ref` → LPF (butter, `lpf_cutoff/lpf_order`, katsayılar döngü dışında) → `/K_pd` (`K_pd = A²/2`) → settling atılır → DC atılır.
-- **sin(φ) düzeltmesi:** `P = Σ|S_cross|·df`; `σ² = -0.5·ln(1-2P)`; `correction_factor = σ²/P`; `S_corrected = S·correction_factor`.
-- **Hata metriği:** cross-PSD ile DUT FFT periodogramı ortak log-frekans ekseninde (200 nokta, interp) karşılaştırılır; `mean_absolute_error_fft_db` = ortalama |Δ| dB. NaN'lar maskelenir.
+- **İterasyon döngüsü:** Her iterasyonda yeni DUT, Ref1 ve Ref2 faz gürültüsü
+  realizasyonları üretilir. İki ölçüm kanalında o iterasyona ait aynı DUT
+  ortaktır; referanslar birbirinden bağımsızdır. Kompleks Cross-PSD ve filtresiz
+  DUT periodogramı iterasyonlar boyunca lineer alanda ayrı ayrı ortalanır.
+- **Faz detektörü:** `mixer.m` → `lowpass_filter.m` → `/K_pd`
+  (`K_pd = A²/2`) → settling atılır → DC atılır → `compute_cross_psd.m`.
+  Butter katsayıları LPF fonksiyonunda ayarlar değişmedikçe önbellekten kullanılır.
+- **sin(φ) düzeltmesi:** `P = Σ|S_cross|·df`; `σ² = -0.5·ln(1-2P)`;
+  `correction_factor = σ²/P`; `S_corrected = S·correction_factor`. Aktif kodda
+  ayrıca bir referans bastırma (`a_ref`) çarpanı yoktur.
+- **Hata metriği:** Ortalama cross-PSD ile iterasyonların ortalama DUT FFT
+  periodogramı ortak log-frekans ekseninde (200 nokta, interp) karşılaştırılır;
+  `mean_absolute_error_fft_db` = ortalama |Δ| dB. NaN'lar maskelenir.
 - **DUT RMS ayarı:** `generate_phase_noise` normalize edip `phase_rms` ile ölçekler; N **çift** olmalı.
 
 ## Alınan Kararlar (Karar Günlüğü)
@@ -56,6 +70,21 @@ Gereksinim: Octave `signal` paketi (`pkg load signal`, otomatik yüklenir).
 5. **Welch bloğu kaldırıldı**: Kullanılmıyordu, sonuç yapısını şişiriyordu.
 6. **generate_phase_noise seed davranışı korundu** (per-call seed) — README'de de not edildi; kırılmasına izin verilmedi.
 7. Aktif klasörde otomatik test veya ayrı benchmark betiği yoktur.
+8. **İterasyon modeli güncellemesi** (2026-08-19): Her iterasyonda yeni
+   DUT faz gürültüsü realizasyonu üretilir; çizilen DUT referansı, bu
+   realizasyonların lineer periodogram ortalamasıdır. Tam çözünürlüklü
+   ortalama DUT PSD mevcut raw MAT sonucu içinde saklanır; dosya boyutunu
+   gereksiz büyütmemek için tek tek DUT zaman dizileri saklanmaz.
+9. Yalnız `number_of_iterations` değerlerini tarayan `run_iterations.m` eklendi;
+   mevcut karşılaştırma kayıt ve çizim altyapısı yeniden kullanılıyor.
+
+### 2026-08-19 Değişiklik Öncesi Yedek
+
+- Kaynak yedeği: `phasedetector_optimized_source_backup_20260819_141327831.zip`
+- İçerik: optimized klasöründeki 14 kaynak/doküman dosyası ile kökteki
+  `MEMORY_BANK.md` ve `CHANGES.md` (toplam 16 dosya).
+- Geçmiş `results/` çıktıları büyük ve zaten değiştirilmeyecek olduğundan ZIP'e
+  dahil edilmedi.
 
 ## Dikkat / Bilinen Noktalar
 
@@ -77,6 +106,7 @@ Farklı parametre verileriyle simülasyonu koşturup karşılaştıran ve **ham 
 
 ```
 run_comparisons.m        → giriş betiği (proje yolunu ekler, koşuyu başlatır)
+run_iterations.m         → yalnız iterasyon listesini tarayan giriş betiği
 run_comparisons_main.m   → DEFAULT PARAMETRELER + tarama listeleri + koşu mantığı
 replot_results.m         → ham veriden grafikleri yeniden çizen giriş betiği
 replot_results_main.m    → raw .mat dosyalarını yükleyip yeniden çizer
@@ -101,5 +131,15 @@ run_single.m             → tek koşu grafiği (cross-PSD + DUT FFT)
 
 ### Karar günlüğü ekleri
 
-8. Güncel aktif kaynakta yerel yansıma mimarisi bulunmaz; bu konu gelecekte ortam sorunu olarak yeniden değerlendirilmelidir.
-9. PNG üretimi grafik backend'ine bağlıdır; kaydetme hatası simülasyon sonucunu durdurmaz.
+10. Güncel aktif kaynakta yerel yansıma mimarisi bulunmaz; bu konu gelecekte ortam sorunu olarak yeniden değerlendirilmelidir.
+11. PNG üretimi grafik backend'ine bağlıdır; kaydetme hatası simülasyon sonucunu durdurmaz.
+12. **Devre bloğu ayrımı** (2026-08-20): Mixer, Butterworth LPF ve FFT tabanlı
+    korelasyon ayrı fonksiyonlara taşındı. `run_simulation` ve
+    `measure_iteration` section başlıklarıyla yalnız işlem sırasını gösterir;
+    sayısal formüller ve `results` yapısı değiştirilmedi.
+
+### 2026-08-20 Refactor Öncesi Yedek
+
+- Kaynak yedeği: `phasedetector_optimized_source_backup_20260820_094339871.zip`
+- İçerik: aktif optimized klasöründeki 15 kaynak/doküman dosyası ile kökteki
+  `MEMORY_BANK.md` ve `CHANGES.md` (toplam 17 dosya); `results/` dahil değildir.

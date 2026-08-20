@@ -3,11 +3,13 @@ function phase_noise = generate_phase_noise(N, phase_rms)
 % Algoritma beyaz gürültüyü FFT uzayında 1/sqrt(f^3) ile şekillendirir;
 % bu genlik filtresi uygulandığında güç spektrumu 1/f^3 olur.
 
+%% ---------------- INPUT CHECK ----------------
 % Bu üretim dizisi çift N için tasarlanmıştır.
 if mod(N, 2) ~= 0
     error('N cift sayi olmalidir.');
 end
 
+%% ---------------- WHITE NOISE SOURCE ----------------
 % Projenin istenen davranışı gereği her DUT/Ref üretimi zaman tabanlı yeni seed
 % kurar; rng çağrısı bilinçli olarak bu fonksiyonun içindedir.
 seed_multiplier = 173;
@@ -18,6 +20,7 @@ rng(seed);
 white = randn(N, 1);
 X_white = fft(white);
 
+%% ---------------- 1/F^3 SPECTRAL SHAPING ----------------
 % FFT'nin pozitif ve negatif taraflarına simetrik bin indeksi kur; DC'deki sıfıra
 % bölmeyi geçici olarak önle, ardından DC kazancını açıkça sıfırla.
 f_bin = [0:N/2, N/2-1:-1:1]';
@@ -32,6 +35,7 @@ phase_noise_filter(1) = 0;
 X_colored = X_white .* phase_noise_filter;
 unit_phase_noise = real(ifft(X_colored));
 
+%% ---------------- RMS NORMALIZATION ----------------
 % Her rastgele realizasyonun toplam RMS'ini tam olarak phase_rms değerine getir.
 unit_phase_noise = remove_dc(unit_phase_noise);
 unit_phase_noise = unit_phase_noise / sqrt(mean(unit_phase_noise.^2));
