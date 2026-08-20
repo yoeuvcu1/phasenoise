@@ -9,6 +9,7 @@
 !*.jsonc
 !*.yaml
 !*.yml
+!*.docx
 !.gitignore
 
 # Generated simulation output must never be versioned.
