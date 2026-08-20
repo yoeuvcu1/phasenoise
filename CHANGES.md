@@ -1,102 +1,143 @@
-# Değişiklik Raporu: "phasedetector with cross correlation" → "phasedetector with cross correlation optimized"
+# Change Log
 
-Tarih: 2026-08-07
-Amaç: Aynı simülasyonun hız/okunabilirlik için optimize edilmiş kopyasındaki algoritmik ve yapısal farkları belgelemek. Orijinal klasör değiştirilmedi.
+Bu dosya projenin güncel kronolojik değişiklik kaydıdır. Ayrıntılı kullanım
+için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 
-> Güncel not (2026-08-19): Bu rapor 2026-08-07 durumunu belgeler. Aktif kodda
-> DUT artık her iterasyonda yeniden üretilir ve DUT periodogramları ortalanır;
-> güncel davranış için `MEMORY_BANK.md` dosyasına bakın.
->
-> Güncel not (2026-08-20): Aktif kodun okunabilirlik refactor'unda mixer,
-> Butterworth LPF ve FFT tabanlı Cross-PSD ayrı fonksiyonlara taşındı. Aşağıdaki
-> "LPF run_simulation içindedir" ifadeleri yalnız 2026-08-07 durumunu anlatır.
+## 2026-08-20: Repo Dokümantasyonu ve Yayınlama
 
-## 1. Dosya Yapısı Farkları
+- Kök `README.md` eklendi ve tek aktif çalışma alanı açıkça tanımlandı.
+- Optimize klasör README'si config sözleşmesi, runner profilleri, sonuç yapısı,
+  sweep/replot akışı ve bilinen sınırlarla yeniden yazıldı.
+- `MEMORY_BANK.md` eski makine yolları, ZIP notları ve güncel kodla çelişen
+  varsayılanlardan temizlendi.
+- Legacy klasör README'si salt tarihsel referans olarak işaretlendi.
+- Proje raporu, tarihli ve yerel kanıtlara dayanan tamamlanmamış taslak olarak
+  açıkça etiketlendi.
+- `results/`, MAT, görsel ve ZIP dosyalarını dışarıda bırakan metin odaklı Git
+  politikası eklendi.
+- Mevcut Git geçmişi, commit SHA değerleri korunarak GitHub `main` branch'ine
+  aktarıldı.
 
-| Dosya | Durum | Açıklama |
-|---|---|---|
-| `main.m` | Değişti | `step01_sources` yerine `run_simulation` çağırıyor, açıklamalar eklendi |
-| `step01_sources.m` | Silindi | İçeriği `run_simulation.m` + `validate_config.m`'e ayrıldı |
-| `lowpass_filter.m` | Silindi | Butter tasarımı `run_simulation` içine alındı, her iterasyonda tekrar tasarlama kaldırıldı |
-| `run_simulation.m` | Yeni | Ana simülasyon (eski `step01_sources`'un karşılığı) |
-| `validate_config.m` | Yeni | Zorunlu config alanı kontrolü |
-| `benchmark_fft.m` | Yeni | Asal nfft vs 2'nin kuvveti nfft FFT hız karşılaştırması (yalnız ölçüm, kodu değiştirmez) |
-| `measure_iteration.m` | Büyük değişiklik | Aşağıya bakın |
-| `generate_phase_noise.m` | Küçük değişiklik | Sabitler adlandırıldı, seed modulus 10000 → 100000 |
-| `logbin_psd.m` | Algoritmik değişiklik | `max(P)` → `mean(P)` |
-| `test_rms_runs.m` | Parametre değişti | N: 10000 → 1000000, iterasyon: 500 → 100 |
-| `compute_periodogram.m` | Aynı (yalnız yorum) | — |
-| `bin_and_convert.m` | Aynı (yalnız yorum) | — |
-| `psd_to_ssb.m` | Aynı (yalnız yorum) | — |
-| `remove_dc.m` | Aynı (yalnız yorum) | — |
-| `valid_freq_mask.m` | Aynı (yalnız yorum) | — |
-| `README.md` | Geliştirildi | Boş başlık → proje tanımı |
+## 2026-08-20: Devre Bloğu Ayrımı
 
-## 2. Algoritmik Değişiklikler (Sıralı Etki)
+- Mixer işlemi `mixer.m` dosyasına taşındı.
+- Butterworth tasarımı ve iki kanal filtrelemesi `lowpass_filter.m` içinde
+  toplandı.
+- LPF katsayıları config değişmediği sürece persistent cache'den kullanılmaya
+  başlandı.
+- FFT Cross-PSD hesabı `compute_cross_psd.m` dosyasına ayrıldı.
+- `run_simulation.m` ve `measure_iteration.m` orchestration odaklı hale
+  getirildi.
+- Sayısal formüller ve dış `results` sözleşmesi korunarak okunabilirlik
+  artırıldı.
+- `run_single.m`, diğer giriş betikleri gibi kendi klasörünü path'e ekleyecek
+  şekilde konumdan bağımsız hale getirildi.
 
-### 2.1 Cross-PSD hesabı: `xcorr` → doğrudan FFT cross-spektrumu  ⭐ en önemli değişiklik
+## 2026-08-19: Her İterasyonda Yeni DUT
 
-**Orijinal** (`measure_iteration.m`):
-```
-r = xcorr(channel_1, channel_2, "biased");   % 2M-1 uzunluğunda
+- Önceki tek-DUT yaklaşımı kaldırıldı; her iterasyonda yeni DUT faz gürültüsü
+  üretilmeye başlandı.
+- Aynı iterasyonun iki ölçüm kanalı ortak DUT kullanmaya devam etti.
+- Filtresiz DUT periodogramları lineer PSD alanda ortalanarak Cross-PSD ile
+  aynı Monte Carlo popülasyonu karşılaştırıldı.
+- Tam çözünürlüklü ortalama `results.dut_fft.psd` alanında saklandı.
+- Tek tek DUT zaman dizileri dosya boyutu nedeniyle saklanmadı.
+- Yalnız `number_of_iterations` tarayan `run_iterations.m` eklendi.
+
+## 2026-08-18: Aktif Akışın Sadeleştirilmesi
+
+- Optimize uygulama function tabanlı `run_simulation(config)` API'sinde
+  toplandı.
+- Girişler `run_single.m`, `run_comparisons.m`, `run_iterations.m` ve
+  `replot_results.m` olarak ayrıldı.
+- Kullanılmayan wrapper, benchmark ve eski test betikleri kaldırıldı.
+- Sweep kaydı `raw`, `plots`, `summary.mat` ve `summary.csv` düzeninde
+  standartlaştırıldı.
+- Kompleks Cross-PSD ve lineer DUT ortalaması sonuç sözleşmesinde netleştirildi.
+
+## 2026-08-17: Optimize Uygulama ve Sweep Altyapısı
+
+- `phasedetector with cross correlation optimized/` ayrı çalışma alanı olarak
+  oluşturuldu.
+- Zorunlu config doğrulaması `validate_config.m` içine ayrıldı.
+- Parametre sweep'leri ve kayıtlı sonucu yeniden çizme akışı eklendi.
+- `signal` paketi Octave altında bir kez yüklenen persistent akışa alındı.
+- Hata mesajları ve işlev açıklamaları geliştirildi.
+
+## 2026-08-07: Temel Algoritmik Optimizasyonlar
+
+Bu tarih, eski ve optimize akış arasındaki ilk tasarım farklarının tarihsel
+başlangıcıdır. O tarihte kullanılan bazı dosyalar daha sonra kaldırılmış veya
+yeniden ayrılmıştır; aşağıdaki kararların aktif karşılıkları güncel dosyalarda
+devam eder.
+
+### Cross-PSD: `xcorr` Zincirinden Doğrudan FFT'ye
+
+Eski yaklaşım:
+
+```matlab
+r = xcorr(channel_1, channel_2, "biased");
 r = ifftshift(r);
-S = fft(r) / fs;                              % 2M-1 nokta
+S = fft(r) / fs;
 ```
 
-**Optimized**:
-```
-X1 = fft(channel_1, nfft);  X2 = fft(channel_2, nfft);
+Aktif yaklaşım:
+
+```matlab
+X1 = fft(channel_1, nfft);
+X2 = fft(channel_2, nfft);
 S = X1 .* conj(X2) / (fs * channel_length);
 ```
 
-- Matematiksel olarak eşdeğer: biased xcorr'in FFT'si `X1·conj(X2)/(fs·M)` verir; ikinci form tek adımda hesaplanır.
-- `xcorr` + `ifftshift` + tam uzunluk FFT zinciri kaldırıldı → büyük hız kazancı.
+- Biased cross-correlation FFT'sinin doğrudan cross-spektrum karşılığı
+  kullanıldı.
+- `xcorr`, `ifftshift` ve tam korelasyon dizisi kaldırıldı.
+- Değişiklik hesaplama maliyetini azaltmak amacıyla yapıldı; güncel repoda
+  kontrollü, tekrarlanabilir hız benchmark'ı bulunmadığı için sayısal hız
+  çarpanı iddia edilmez.
 
-### 2.2 FFT boyu: asal `2M-1` → 2'nin kuvveti `2^nextpow2(2M-1)` ⭐
+### FFT Uzunluğu
 
-- Orijinal nfft = 2M-1 (çoğunlukla asal → Octave Bluestein algoritması kullanır, yavaş).
-- Optimized: üstteki ilk 2'nin kuvveti → radix-2 hızlı FFT.
-- Sonuç: frekans ızgarası sıkılaştı (df = fs/nfft), toplam güç değişmez (yalnızca frekans enterpolasyonu/zero-padding).
-- Hız farkı `benchmark_fft.m` ile ölçülebilir.
+- `2*M-1` uzunluğunun yavaş asal/Bluestein FFT'ye düşme riski azaltıldı.
+- `nfft = 2^nextpow2(2*M-1)` seçilerek radix-2 FFT kullanıldı.
+- Zero-padding frekans ızgarasını sıklaştırır; bağımsız çözünürlüğü artırdığı
+  şeklinde yorumlanmamalıdır.
 
-### 2.3 LPF katsayıları döngü dışında bir kez hesaplanıyor ⭐
+### Lineer Ortalama
 
-- Orijinal: her iterasyonda her kanal için `lowpass_filter` → 2 kez `butter` tasarımı + 2 ayrı `filter` çağrısı.
-- Optimized: `b_lpf, a_lpf` ve `K_pd = A²/2` `run_simulation`'da bir kez hazırlanıp `measure_iteration`'a parametre olarak geçilir.
-- Ayrıca iki kanal `[x_dut .* x_ref1, x_dut .* x_ref2]` matrisinde birleştirildi → tek `filter` çağrısı (kolon bazında vektörize).
+- Kayan ortalama yerine kompleks spektrum toplamı ve final bölme kullanıldı.
+- Büyüklük alma işlemi kompleks Cross-PSD ortalamasından sonraya bırakıldı.
+- DUT periodogramı da dB yerine lineer güç alanında ortalandı.
 
-### 2.4 İterasyon ortalaması: kayan ortalama → toplam/böl
+### Log-Bin
 
-- Orijinal: `S_avg += (S_i - S_avg) / i` (her iterasyonda bölme).
-- Optimized: `S_sum += S_i`, sonunda `S_sum / number_of_iterations`. Sonuç aynı, maliyet daha düşük.
-- Frekans ekseni ve toplam vektörü de döngü dışında bir kez ayrılıyor.
+- Eski yorumla çelişen `max(P(mask))` davranışı `mean(P(mask))` ile
+  değiştirildi.
+- Böylece her bin tepe değeri yerine aritmetik ortalama gücü temsil eder.
 
-### 2.5 `logbin_psd`: bin gücü `max` → `mean`
+### Welch Sonuçları
 
-- Orijinal yorum "aritmetik ortalama" dese de kod `P_binned(i) = max(P(mask))` kullanıyordu.
-- Optimized: `P_binned(i) = mean(P(mask))` (yorumla tutarlı gerçek ortalama).
-- dB hata metriğini etkiler (tepe değil ortalama seviye ölçülür).
+- Çizilmeyen ve aktif karşılaştırmada kullanılmayan `dut_welch` alanları
+  kaldırıldı.
+- Aktif sonuç sözleşmesi Cross-PSD ile filtresiz DUT periodogramından oluşur.
 
-### 2.6 Welch karşılaştırma bloğu kaldırıldı
+## 2026-08-04: İlk Uygulama
 
-- Orijinal `step01_sources` sonuçlara `results.dut_welch.*` alanlarını da ekliyordu (çizdirilmiyordu).
-- Optimized'ta bu blok ve `dut_welch` çıktıları yok; çıktı yalnızca cross-PSD ve DUT FFT.
+- Faz gürültüsü kaynak yardımcıları ve ilk cross-correlation modeli eklendi.
+- `1/f^3` gürültü şekillendirme, RMS normalizasyonu ve temel faz detektörü
+  deneyleri oluşturuldu.
 
-### 2.7 İnterpolasyon sağlamlaştırma
+## Aktif Teknik Kararlar
 
-- `f_common` uç noktalarda kayan nokta taşmasına karşı `[f_min, f_max]` aralığına kıstırılıyor (`min(max(...))`).
-- NaN noktalar maske ile ortalamadan çıkarılıyor; hepsi NaN ise açık hata veriliyor.
-
-### 2.8 Diğer küçük farklar
-
-- `generate_phase_noise`: sabitler isimlendirildi; seed modulus 10000 → 100000 (rastgelelik dönemi 10× büyüdü). Per-call seed davranışı korundu.
-- `test_rms_runs`: N = 1.000.000, iterasyon = 100 (daha uzun kanal + daha az iterasyon; kaynak başına maliyet düştüğü için toplam süre dengelendi).
-- `pkg load signal`: yalnızca Octave'de ve `persistent` bayrakla bir kez yükleniyor.
-- Hata mesajları Türkçeleştirildi ve işlev açıklama satırları eklendi.
-
-## 3. Değişmeyen / Korunan Davranış
-
-- DUT faz gürültüsü döngü dışında **bir kez** üretilir; referanslar her iterasyonda yeniden üretilir (cross-correlation'ın amacı).
-- sin(φ) doğrusalsızlık düzeltmesi (`sigma2 = -0.5·ln(1-2P)`, `correction_factor`) aynı.
-- `psd_to_ssb` (L = 10·log10(P/2)), `valid_freq_mask` ve `remove_dc` davranışları birebir aynı.
-- `main`'in varsayılan config değerleri aynı (N=100000, fs=1e6, f0=50e3, ...).
+1. Desteklenen runtime GNU Octave'dır.
+2. Tek aktif klasör `phasedetector with cross correlation optimized/`dır.
+3. Kompleks Cross-PSD büyüklükten önce ortalanır.
+4. DUT referansı aynı iterasyonların lineer periodogram ortalamasıdır.
+5. Log-bin aritmetik ortalama güç kullanır.
+6. Welch aktif sonuç sözleşmesine dahil değildir.
+7. Sweep'ler bağımsız tek-parametre taramalarıdır; Cartesian ürün değildir.
+8. Büyük sonuç dosyaları Git dışında tutulur.
+9. Zaman tabanlı RNG mevcut davranıştır fakat yeniden üretilebilirlik problemi
+   olarak ele alınmalı ve gelecekte değiştirilmelidir.
+10. Algoritmik performans iddiaları kontrollü benchmark olmadan sayısal değerle
+    raporlanmaz.

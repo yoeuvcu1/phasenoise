@@ -1,145 +1,261 @@
-# MEMORY BANK — Phase Noise Cross-Correlation Projesi
+# Memory Bank: Phase Noise Cross-Correlation
 
-Bu dosya, "phasedetector with cross correlation optimized" projesindeki çalışma oturumları arasında bağlam korumak içindir. Yeni bir oturumda önce burayı oku.
+Son güncelleme: 2026-08-20
 
-## Proje Özeti
+Bu dosya oturumlar arası teknik handoff kaydıdır. Yeni bir oturumda önce kök
+`README.md`, sonra bu dosya okunmalıdır. Ayrıntılı kullanım ve config sözleşmesi
+aktif klasörün `README.md` dosyasındadır.
 
-Faz gürültüsü ölçümünün (phase noise) **cross-correlation / cross-PSD** yöntemiyle simülasyonu (GNU Octave). İki bağımsız referans kanalıyla DUT faz gürültüsü ölçülür; referansların kendi gürültüleri iterasyon ortalamasında söner, DUT'unki birikir.
+## Aktif Kapsam
 
-## Klasör Yapısı
+Tek aktif çalışma alanı:
 
-```
-Octave/  (workspace kökü)
-├── CHANGES.md                       ← orijinal vs optimized fark raporu
-├── MEMORY_BANK.md                   ← bu dosya
-├── phasedetector with cross correlation/          (ORİJİNAL - değiştirme)
-└── phasedetector with cross correlation optimized/ (AKTİF - üzerinde çalışılan)
-    ├── run_single.m                 ← tek simülasyon giriş betiği ve grafiği
-    ├── run_comparisons.m            ← parametre taraması giriş betiği
-    ├── run_iterations.m             ← yalnız iterasyon sayısı taraması
-    ├── run_simulation.m             ← ana simülasyon akışı
-    ├── measure_iteration.m          ← tek iterasyonda devre bloklarını bağlayan akış
-    ├── mixer.m                      ← DUT ile Ref1/Ref2 çarpım bloğu
-    ├── lowpass_filter.m             ← Butterworth LPF tasarımı ve uygulaması
-    ├── compute_cross_psd.m          ← FFT tabanlı korelasyon / Cross-PSD bloğu
-    ├── generate_phase_noise.m       ← 1/f³ spektrumlu faz gürültüsü üretici
-    ├── compute_periodogram.m        ← DUT referans PSD (tek taraflı)
-    ├── logbin_phase_noise.m         ← log-bin + SSB dBc/Hz dönüşümü
-    ├── remove_dc.m                  ← kolon ortalamasını çıkar
-    ├── validate_config.m            ← config alan doğrulama
-    ├── plot_sweep_results.m         ← sweep sonuçlarının subplot grafiği
-    ├── replot_results.m             ← kaydedilmiş sweep sonuçları giriş betiği
-    └── replot_results_main.m        ← kayıtlı spektrumları yükleyip yeniden çizer
+```text
+phasedetector with cross correlation optimized/
 ```
 
-## Çalıştırma
+Kurallar:
 
-```matlab
-run_single;                % tek simülasyon (ayarlar betiğin başındadır)
-run_comparisons;           % tanımlı parametre taramalarını çalıştırır
-run_iterations;            % yalnız number_of_iterations değerlerini tarar
-replot_results;            % kaydedilmiş taramaların grafiklerini yeniden çizer
+- Yeni kod ve deney yalnız aktif klasörde yapılır.
+- `phasedetector with cross correlation/` legacy referanstır; açık istek
+  olmadan değiştirilmez.
+- Kök `AWGN.m`, `phasenoise.m`, `pinknoise.m` ve benzeri dosyalar aktif akışın
+  runtime bağımlılığı değildir.
+- `results/`, `.mat`, görseller ve ZIP yedekleri Git'e gönderilmez.
+- `.opencode/` opsiyonel geliştirme aracıdır; simülasyon bağımlılığı değildir.
+
+## Projenin Amacı
+
+GNU Octave üzerinde iki bağımsız referans kanallı faz detektörü modellemek ve
+kompleks Cross-PSD ortalamasıyla ortak DUT faz gürültüsünü tahmin etmek.
+Kanallara özgü referans gürültüsünün iterasyon sayısıyla bastırılması, tahminin
+filtresiz DUT periodogram ortalamasıyla karşılaştırılması ve parametre
+sweep'lerinin kalıcı olarak incelenmesi hedeflenir.
+
+## Güncel Mimari
+
+```text
+run_single / run_comparisons / run_iterations
+  -> run_simulation
+     -> validate_config
+     -> generate_phase_noise (DUT)
+     -> measure_iteration
+        -> generate_phase_noise (Ref1, Ref2)
+        -> mixer
+        -> lowpass_filter
+        -> remove_dc
+        -> compute_cross_psd
+     -> compute_periodogram (DUT)
+     -> kompleks/lineer iterasyon ortalamaları
+     -> sin(phi) güç düzeltmesi
+     -> logbin_phase_noise
+     -> MAE hesabı
 ```
 
-Gereksinim: Octave `signal` paketi (`pkg load signal`, otomatik yüklenir).
+Sweep ve tekrar çizim:
 
-## Önemli Algoritma Notları
+```text
+run_comparisons / run_iterations
+  -> run_comparisons_main
+     -> run_simulation
+     -> raw MAT + summary MAT/CSV + comparison PNG
 
-- **Cross-PSD (optimized):** `S_cross = fft(c1, nfft) .* conj(fft(c2, nfft)) / (fs·M)`, tek taraflıya çevrilip DC hariç ×2. nfft = `2^nextpow2(2·(N - settling) - 1)` (radix-2). Eski xcorr+ifftshift+fft zincirine eşdeğer, çok daha hızlı.
-- **İterasyon döngüsü:** Her iterasyonda yeni DUT, Ref1 ve Ref2 faz gürültüsü
-  realizasyonları üretilir. İki ölçüm kanalında o iterasyona ait aynı DUT
-  ortaktır; referanslar birbirinden bağımsızdır. Kompleks Cross-PSD ve filtresiz
-  DUT periodogramı iterasyonlar boyunca lineer alanda ayrı ayrı ortalanır.
-- **Faz detektörü:** `mixer.m` → `lowpass_filter.m` → `/K_pd`
-  (`K_pd = A²/2`) → settling atılır → DC atılır → `compute_cross_psd.m`.
-  Butter katsayıları LPF fonksiyonunda ayarlar değişmedikçe önbellekten kullanılır.
-- **sin(φ) düzeltmesi:** `P = Σ|S_cross|·df`; `σ² = -0.5·ln(1-2P)`;
-  `correction_factor = σ²/P`; `S_corrected = S·correction_factor`. Aktif kodda
-  ayrıca bir referans bastırma (`a_ref`) çarpanı yoktur.
-- **Hata metriği:** Ortalama cross-PSD ile iterasyonların ortalama DUT FFT
-  periodogramı ortak log-frekans ekseninde (200 nokta, interp) karşılaştırılır;
-  `mean_absolute_error_fft_db` = ortalama |Δ| dB. NaN'lar maskelenir.
-- **DUT RMS ayarı:** `generate_phase_noise` normalize edip `phase_rms` ile ölçekler; N **çift** olmalı.
-
-## Alınan Kararlar (Karar Günlüğü)
-
-1. **xcorr → doğrudan FFT cross-spektrumu** (2026-08-07): Eşdeğer sonuç, büyük hız kazancı.
-2. **nfft → 2'nin kuvveti**: Asal FFT (Bluestein) yavaş; zero-padding yalnız frekansı sıkılaştırır, gücü değiştirmez.
-3. **LPF katsayıları döngü dışında**: Butter tasarımı iterasyon başına tekrarlanmaz.
-4. **Log-bin: max → mean**: Yorumla tutarlı gerçek ortalama güç.
-5. **Welch bloğu kaldırıldı**: Kullanılmıyordu, sonuç yapısını şişiriyordu.
-6. **generate_phase_noise seed davranışı korundu** (per-call seed) — README'de de not edildi; kırılmasına izin verilmedi.
-7. Aktif klasörde otomatik test veya ayrı benchmark betiği yoktur.
-8. **İterasyon modeli güncellemesi** (2026-08-19): Her iterasyonda yeni
-   DUT faz gürültüsü realizasyonu üretilir; çizilen DUT referansı, bu
-   realizasyonların lineer periodogram ortalamasıdır. Tam çözünürlüklü
-   ortalama DUT PSD mevcut raw MAT sonucu içinde saklanır; dosya boyutunu
-   gereksiz büyütmemek için tek tek DUT zaman dizileri saklanmaz.
-9. Yalnız `number_of_iterations` değerlerini tarayan `run_iterations.m` eklendi;
-   mevcut karşılaştırma kayıt ve çizim altyapısı yeniden kullanılıyor.
-
-### 2026-08-19 Değişiklik Öncesi Yedek
-
-- Kaynak yedeği: `phasedetector_optimized_source_backup_20260819_141327831.zip`
-- İçerik: optimized klasöründeki 14 kaynak/doküman dosyası ile kökteki
-  `MEMORY_BANK.md` ve `CHANGES.md` (toplam 16 dosya).
-- Geçmiş `results/` çıktıları büyük ve zaten değiştirilmeyecek olduğundan ZIP'e
-  dahil edilmedi.
-
-## Dikkat / Bilinen Noktalar
-
-- `generate_phase_noise` zaman bazlı seed kullandığı için aynı config ile aynı run'ı birebir tekrarlamaz (istatistiksel test için istenen davranış).
-- `lowpass_filter.m` optimize klasörde **yok**; butter+filter artık `run_simulation` içinde.
-- Orijinal klasördeki `results.dut_welch.*` çıktıları optimized'ta mevcut değil.
-- `N <= settling_samples` ve tek N durumlarında hata verilir (dokümante edildi).
-- Çalışma dizini, her iki klasörü ve kökteki yardımcı `*.m` dosyalarını içeren `Octave/` köküdür (AWGN, pinknoise vb. bağımsız araçlar).
-
-## Yapılacaklar / Açık Sorular
-
-- [ ] FFT hız kazancını tekrarlanabilir bir benchmark betiğiyle sayısal olarak kaydet.
-- [ ] Cross-PSD ile DUT FFT hata metriğinin düşük RMS'lerde (ör. 0.05 rad) davranışı doğrulandı mı?
-- [ ] İstenirse `run_simulation`'a Welch karşılaştırması geri eklenebilir (kaldırıldı).
-
-## Karşılaştırma Koşu Çerçevesi (2026-08-07)
-
-Farklı parametre verileriyle simülasyonu koşturup karşılaştıran ve **ham veriyi kalıcı kaydeden** çerçeve. Optimized klasörüne eklenen dosyalar:
-
-```
-run_comparisons.m        → giriş betiği (proje yolunu ekler, koşuyu başlatır)
-run_iterations.m         → yalnız iterasyon listesini tarayan giriş betiği
-run_comparisons_main.m   → DEFAULT PARAMETRELER + tarama listeleri + koşu mantığı
-replot_results.m         → ham veriden grafikleri yeniden çizen giriş betiği
-replot_results_main.m    → raw .mat dosyalarını yükleyip yeniden çizer
-plot_sweep_results.m     → tarama değerlerini üst üste çizen karşılaştırma grafiği
-run_single.m             → tek koşu grafiği (cross-PSD + DUT FFT)
+replot_results
+  -> replot_results_main
+     -> summary/raw yükle
+     -> plot_sweep_results
 ```
 
-Çalıştırma: `run("O:\phasedetector with cross correlation optimized\run_comparisons.m")`. Grafikleri sonradan çizmek için aynı şekilde `replot_results.m`.
+## Aktif Dosya Sorumlulukları
 
-Çıktı düzeni: `results/<yyyymmdd_HHMMSS>_<tarama>/` altında `raw/run_NN_<tarama>_<deger>.mat` (tam sonuç yapısı), `plots/*.png`, `summary.mat`, `summary.csv`. Ham veri hem tekrar hesaplama hem tekrar çizim için yeterlidir (config dahil saklanır).
+| Dosya | Sorumluluk |
+|---|---|
+| `run_simulation.m` | Ana simülasyon ve sonuç sözleşmesi |
+| `measure_iteration.m` | Tek iterasyondaki iki kanalın işlem sırası |
+| `generate_phase_noise.m` | Zaman seed'li `1/f^3` faz gürültüsü |
+| `mixer.m` | DUT ile referansların çarpımı |
+| `lowpass_filter.m` | Cache'li Butterworth LPF |
+| `compute_cross_psd.m` | FFT tabanlı kompleks tek taraflı Cross-PSD |
+| `compute_periodogram.m` | Filtresiz DUT PSD referansı |
+| `logbin_phase_noise.m` | Log-bin ve SSB dBc/Hz |
+| `validate_config.m` | 12 zorunlu config alanının doğrulanması |
+| `run_comparisons_main.m` | Sweep, zamanlama ve kayıt yönetimi |
+| `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü |
+| `replot_results_main.m` | Kayıtlı sweep'in yeniden çizimi |
 
-### Taramalar (run_comparisons_main.m "KOŞULACAK TARAMALAR" bölümü)
+## Değişmemesi Gereken Algoritmik Kurallar
 
-- Sabitler: `N=1000000`, `fs=1e6`, `A=1`, `f0=50e3`, `settling_samples=600`, `lpf_order=4`.
-- `lpf_cutoff` = [5k, 10k, 25k, 50k] Hz; `rms_dut` ve `rms_ref` = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]; `iterations` = [1, 10, 50, 100, 200, 300]; `log_bins` = [10, 25, 50, 80, 100, 200]. Orijinal değer her listede grafikte "(orig)" işaretlenir.
+1. Her iterasyonda yeni DUT, Ref1 ve Ref2 realizasyonları üretilir.
+2. Aynı iterasyonda iki kanal aynı DUT'u kullanır.
+3. Cross-spektrum `X1 .* conj(X2) / (fs*M)` olarak hesaplanır.
+4. Cross-spektrumlar kompleks alanda toplanır; büyüklük ortalamadan sonra
+   alınır.
+5. DUT periodogramları lineer PSD alanda toplanır ve aynı iterasyon sayısına
+   bölünür.
+6. FFT uzunluğu radix-2 olacak şekilde
+   `2^nextpow2(2*(N-settling_samples)-1)` seçilir.
+7. Faz detektörü kazancı `K_pd=A^2/2` ile normalize edilir.
+8. Log-bin içinde tepe değil aritmetik ortalama kullanılır.
+9. Welch sonucu aktif sözleşmenin parçası değildir.
+10. `results.dut_fft_unfiltered`, `results.dut_fft` ile aynı verinin alias'ıdır.
 
-### Ağ sürücüsü notu
+Bu kurallardan biri değişirse sonuç karşılaştırmaları artık doğrudan eski
+koşularla eşdeğer kabul edilmemeli ve `CHANGES.md` güncellenmelidir.
 
-- Güncel giriş betiklerinde yerel yansıma (mirror) uygulanmaz; `run_comparisons.m` ve `replot_results.m` doğrudan proje yolunu `addpath` ile ekler.
-- PNG üretiminde kullanılabilir grafik backend'ine ihtiyaç vardır; `plot_sweep_results` kaydetme hatasını uyarı olarak bildirir.
-- Proje klasörü `O:` sürücüsü olarak da haritalanmıştır (`net use O: \\kutu\users\staj\92010866\Desktop\Octave /persistent:yes`).
+## Güncel Runner Profilleri
 
-### Karar günlüğü ekleri
+Tek bir ortak varsayılan profil yoktur.
 
-10. Güncel aktif kaynakta yerel yansıma mimarisi bulunmaz; bu konu gelecekte ortam sorunu olarak yeniden değerlendirilmelidir.
-11. PNG üretimi grafik backend'ine bağlıdır; kaydetme hatası simülasyon sonucunu durdurmaz.
-12. **Devre bloğu ayrımı** (2026-08-20): Mixer, Butterworth LPF ve FFT tabanlı
-    korelasyon ayrı fonksiyonlara taşındı. `run_simulation` ve
-    `measure_iteration` section başlıklarıyla yalnız işlem sırasını gösterir;
-    sayısal formüller ve `results` yapısı değiştirilmedi.
+### `run_single.m`
 
-### 2026-08-20 Refactor Öncesi Yedek
+```text
+N=100000, fs=1e6, A=1, f0=50e3
+settling=100, LPF=1e3/order 4
+DUT RMS=0.2, Ref RMS=0.05/0.05
+iterations=200, log bins=100
+```
 
-- Kaynak yedeği: `phasedetector_optimized_source_backup_20260820_094339871.zip`
-- İçerik: aktif optimized klasöründeki 15 kaynak/doküman dosyası ile kökteki
-  `MEMORY_BANK.md` ve `CHANGES.md` (toplam 17 dosya); `results/` dahil değildir.
+### `run_comparisons.m`
+
+```text
+N=100000, fs=1e6, A=1, f0=50e3
+settling=0, LPF=10e3/order 4
+DUT RMS=0.02, Ref RMS=0.02/0.02
+iterations=100, log bins=100
+```
+
+Sweep listeleri:
+
+```text
+lpf_cutoff: [1k, 5k, 7.5k, 10k, 25k, 50k] Hz
+rms_dut:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
+rms_ref:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
+iterations: [1, 10, 50, 100, 200, 300]
+log_bins:   [10, 25, 50, 80, 100, 200]
+```
+
+Her liste bağımsız tek-parametre sweep'idir; Cartesian ürün değildir.
+
+### `run_iterations.m`
+
+```text
+N=10000, fs=1e6, A=1, f0=200e3
+settling=0, LPF=100e3/order 4
+DUT RMS=0.02, Ref RMS=0.05/0.05
+iterations marker=100, log bins=100
+sweep=[1,10,50,100,200,500,1000,2000,5000,10000,20000]
+```
+
+## Sonuç ve Metrik Sözleşmesi
+
+- `results.cross.psd`: kompleks, ortalanmış ve düzeltme uygulanmış tam
+  çözünürlüklü Cross-PSD.
+- `results.dut_fft.psd`: aynı koşulardaki filtresiz DUT periodogramlarının
+  lineer ortalaması.
+- `correction_factor`: ortalama Cross-PSD büyüklüğünden hesaplanan `sin(phi)`
+  güç düzeltmesi.
+- `mean_absolute_error_fft_db`: iki log-bin eğrinin ortak frekans aralığında
+  200 logaritmik noktadaki ortalama mutlak dB farkı.
+- MAE ve düzeltme hesabı şu anda LPF kesimiyle maskelenmez.
+
+Sweep çıktısı:
+
+```text
+results/<timestamp>_<sweep>/
+├── raw/run_<NN>_<sweep>_<value>.mat
+├── plots/<sweep>_comparison.png
+├── summary.mat
+└── summary.csv
+```
+
+Ham MAT dosyası config ve tam spektrumu içerir, fakat Git commit'i, Octave
+sürümü, signal paket sürümü veya RNG seed dizisini içermez.
+
+## Karar Günlüğü
+
+### 2026-08-07
+
+- `xcorr -> ifftshift -> fft` zinciri doğrudan FFT cross-spektrumuna çevrildi.
+- `nfft`, yavaş asal uzunluk yerine bir sonraki 2 kuvvetine yükseltildi.
+- Log-bin içindeki `max` kullanımı `mean` ile değiştirildi.
+- Kullanılmayan Welch sonuçları kaldırıldı.
+
+### 2026-08-18
+
+- Aktif akış function tabanlı hale getirildi.
+- Sweep ve replot altyapısı sadeleştirildi.
+- Ayrı benchmark ve eski wrapper scriptleri kaldırıldı.
+
+### 2026-08-19
+
+- DUT yalnız bir kez üretilmek yerine her iterasyonda yeniden üretilmeye
+  başlandı.
+- DUT periodogramları lineer ortalanarak Cross-PSD ile aynı Monte Carlo
+  popülasyonu karşılaştırıldı.
+- Büyük iterasyon sweep'i eklendi.
+
+### 2026-08-20
+
+- Mixer, LPF ve Cross-PSD ayrı blok fonksiyonlarına taşındı.
+- LPF katsayı cache'i `lowpass_filter.m` içinde toplandı.
+- Kök README, aktif kullanım kılavuzu ve handoff dokümanları güncel kodla
+  eşitlendi.
+- Repo `main` branch'i GitHub'a aktarıldı; sonuç dosyaları hariç tutuldu.
+
+## Bilinen Riskler
+
+1. **RNG yeniden üretilebilir değil.** `generate_phase_noise` her çağrıda
+   global RNG'yi zaman tabanlı seed ile sıfırlar. Seed alanı yalnız 100000
+   değerdir ve kaydedilmez.
+2. **Bağımsızlık doğrulanmadı.** Ref1 ve Ref2 ayrı çağrılardır ancak seed
+   çakışmasına karşı otomatik korelasyon testi yoktur.
+3. **Metrik bandı geniş.** MAE, LPF dışındaki bastırılmış bölgeyi de kapsar.
+4. **Settling profilleri farklı.** Tek koşu 100 örnek atarken sweep'ler sıfır
+   örnek atar.
+5. **İstatistiksel kanıt sınırlı.** Sweep noktaları bağımsız tek koşulardır;
+   güven aralığı veya tekrarlar raporlanmaz.
+6. **Otomasyon yok.** Unit test, CI, paket sürüm kilidi ve kontrollü benchmark
+   bulunmaz.
+7. **Kısmi sonuç mümkün.** Sweep yarıda kesilirse raw dosyalar kalır fakat
+   summary/plot oluşmayabilir.
+8. **MATLAB uyumluluğu yok.** Aktif çalışma ortamı GNU Octave'dır.
+
+## Öncelikli Sonraki İşler
+
+1. Config'e üst seviye kontrollü RNG seed'i ekle; DUT/Ref alt akışlarını ayrı
+   substream/seed'lerle üret ve provenance bilgisini raw/summary dosyalarına
+   kaydet.
+2. Ref1/Ref2 ve DUT/ref korelasyonlarını ölçen otomatik bağımsızlık testi ekle.
+3. Tek taraflı PSD normalizasyonu, kompleks-before-magnitude ortalama ve RMS
+   normalizasyonu için küçük deterministik testler ekle.
+4. MAE için fiziksel olarak anlamlı bir ölçüm bandı tanımla; LPF geçiş ve
+   stop-band etkisini metrikten ayır.
+5. `settling_samples` varsayılanını tüm runner'larda tutarlı ve filtre derecesi
+   ile gerekçeli hale getir.
+6. Aynı ham spektrum üzerinde log-bin sayılarını karşılaştır; her bin değeri
+   için yeni rastgele veri üretme etkisini ayır.
+7. Rapor için seçilmiş CSV/PNG kanıtlarını Git tarafından izlenen ayrı bir
+   dizine taşı ve commit/config/Octave sürümü manifesti ekle.
+8. Eski ve yeni Cross-PSD yollarını aynı deterministik dizilerle karşılaştıran
+   benchmark/eşdeğerlik testi oluştur.
+
+## Yeni Oturum Handoff Kontrolü
+
+```text
+[ ] git status ve son commit kontrol edildi
+[ ] kök README ve bu dosya okundu
+[ ] yalnız optimized klasör aktif kabul edildi
+[ ] değiştirilecek runner profilinin değerleri doğrulandı
+[ ] küçük smoke test config'i hazırlandı
+[ ] sonuç yapısı değişecekse plot/replot etkisi değerlendirildi
+[ ] üretilen results dosyalarının Git'e girmediği kontrol edildi
+[ ] algoritma kararı değiştiyse CHANGES ve README güncellendi
+```
+
+## Ortam Notu
+
+Repo bir ağ paylaşımında olabilir; dokümanlarda sürücü harfi veya kullanıcıya
+özel mutlak yol kullanılmamalıdır. Giriş betikleri yollarını kendi
+`mfilename("fullpath")` değerlerinden türetir ve aktif klasörü path'e ekler.
+PNG kaydı grafik backend'ine bağlıdır ve hata halinde simülasyon sonuçları yine
+üretilebilir.

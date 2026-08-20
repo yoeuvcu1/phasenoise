@@ -18,6 +18,10 @@ config.number_of_iterations = 200; % Cross-PSD ortalama sayısı
 config.number_of_log_bins = 100;   % Logaritmik bin sayısı
 
 %% ---------------- SIMULATION ----------------
+% Script başka bir çalışma klasöründen başlatılsa da proje fonksiyonlarını bul.
+project_dir = fileparts(mfilename("fullpath"));
+addpath(project_dir);
+
 % run_simulation ortalama Cross-PSD ile iterasyonların ortalama DUT periodogramını döndürür.
 results = run_simulation(config);
 

@@ -9,6 +9,13 @@
 **Danışman:** [Danışman Adı]  
 **Tarih:** [Tarih]
 
+> **Durum:** Bu belge tamamlanmamış bir rapor taslağıdır. Sonuç bölümleri
+> 2026-08-19 ve 2026-08-20 tarihli yerel deneylerin anlık görüntüsüdür.
+> Referans verilen `results/` MAT, CSV ve PNG dosyaları Git tarafından izlenmez;
+> mevcut zaman tabanlı RNG nedeniyle temiz bir clone üzerinde bit düzeyinde aynı
+> sonuç garanti edilmez. Güncel çalışma alanı ve kullanım için kök `README.md`
+> ile `phasedetector with cross correlation optimized/README.md` esas alınır.
+
 ---
 
 ## Özet

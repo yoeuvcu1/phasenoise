@@ -9,9 +9,9 @@
 %   3. raw/*.mat spektrumları yüklenir ve aynı subplot çizicisine gönderilir.
 %   4. Mevcut karşılaştırma PNG'si yeni grafikle güncellenir.
 %
-% Çalıştırma biçimi run_comparisons.m ile aynıdır:
-%   run("O:\phasedetector with cross correlation optimized\replot_results.m")
-%   veya CLI'den: octave-cli "O:\...\replot_results.m"
+% Çalıştırma biçimi run_comparisons.m ile aynıdır. Örnek:
+%   project_dir = "/path/to/phasedetector with cross correlation optimized";
+%   run(fullfile(project_dir, "replot_results.m"));
 %
 % Grafikler Octave GUI'de gösterilebilir ve PNG olarak kaydedilir.
 %
@@ -21,7 +21,7 @@
 %       RESULTS_SUBFOLDER = "20260807_123456_lpf_cutoff";
 % =====================================================================
 
-RESULTS_SUBFOLDER = "20260819_162451251_iterations";
+RESULTS_SUBFOLDER = "20260819_162451251_iterations"; % Yerel klasör adıyla değiştirin.
 SHOW_FIGURES = true;   % karşılaştırma grafiğini ekranda göster
 
 % Proje ve results yollarını script'in bulunduğu konumdan türet.
