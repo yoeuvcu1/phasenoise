@@ -57,6 +57,7 @@ kullandığı için MATLAB desteği doğrulanmış değildir.
 | `run_single.m` | Tek simülasyon ve tek figür | Dosya kaydetmez |
 | `run_comparisons.m` | Beş bağımsız tek-parametre sweep'i | Sonuçları diske kaydeder |
 | `run_iterations.m` | Yalnız iterasyon sayısı sweep'i | Varsayılan liste uzun sürer |
+| `extend_iteration_results.m` | Eski iteration sweep'ine değer ekler | Eski koşuları yeniden çalıştırmaz |
 | `replot_results.m` | Kayıtlı sweep'leri yeniden çizer | Simülasyon çalıştırmaz |
 | `run_simulation.m` | Doğrudan programatik API | Tüm config alanları zorunludur |
 
@@ -128,8 +129,10 @@ değildir; her liste bağımsız çalışır ve yalnız kendi parametresini değ
 Varsayılan sweep profili:
 
 ```text
-N=100000, fs=1e6, f0=50e3, settling=0, LPF=10e3
-DUT RMS=0.02, Ref RMS=0.02/0.02, iterations=100, log bins=100
+N=1000000, fs=1e6, f0=200e3, settling=0, LPF=200e3
+DUT RMS=0.05, Ref RMS=0.05/0.05, iterations=100, log bins=100
+LPF sweep=[1k,5k,10k,25k,50k,75k,100k,200k,300k] Hz
+iteration sweep=[1,10,100,200,500,1000]
 ```
 
 ### Büyük İterasyon Sweep'i
@@ -138,15 +141,39 @@ DUT RMS=0.02, Ref RMS=0.02/0.02, iterations=100, log bins=100
 run(fullfile(project_dir, "run_iterations.m"));
 ```
 
-Bu betik `N=10000`, `f0=200e3`, `LPF=100e3`, DUT RMS `0.02`, Ref RMS
-`0.05/0.05` profilini ve şu listeyi kullanır:
+Bu betik şu anda `N=100000`, `f0=200e3`, `LPF=100e3`, DUT RMS `0.02`, Ref
+RMS `0.05/0.05` profilini ve ek koşu listesini kullanır:
 
 ```matlab
-[1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+[250, 500]
 ```
 
-Liste toplam 38861 iterasyon çalıştırır. Hızlı kontrol için betikteki kısa
-alternatif listeyi kullanın.
+Dosyada daha geniş iteration listesi yorum olarak korunur. Mevcut `[250, 500]`
+listesi, daha önce tamamlanmış sweep'lere eksik noktaları eklemek için
+ayarlanmıştır.
+
+### Mevcut Iteration Sweep'ini Genişletme
+
+`extend_iteration_results.m` içindeki temel sonuç klasörünü, içe aktarılacak
+tamamlanmış koşuları ve gerekirse yeni değerleri düzenleyin:
+
+```matlab
+BASE_RESULTS_SUBFOLDER = "20260821_122201830_iterations";
+IMPORT_RESULTS_SUBFOLDERS = {"20260821_145005070_iterations"};
+NEW_ITERATION_VALUES = [2500];
+```
+
+Ardından betiği çalıştırın:
+
+```matlab
+run(fullfile(project_dir, "extend_iteration_results.m"));
+```
+
+İçe aktarılan veya temel klasörde zaten bulunan değerler yeniden simüle
+edilmez. Yalnız eksik `NEW_ITERATION_VALUES` değerleri çalıştırılır. Kaynak
+klasörler korunur; birleşik raw dosyaları, özet ve grafik yeni bir
+`<timestamp>_iterations_merged` klasörüne yazılır. İçe aktarılacak bir koşunun
+`summary.mat` dosyası oluşmadan, yani koşu tamamlanmadan birleştirme yapılmaz.
 
 ## Config Sözleşmesi
 

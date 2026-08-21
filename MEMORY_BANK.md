@@ -60,6 +60,11 @@ run_comparisons / run_iterations
      -> run_simulation
      -> raw MAT + summary MAT/CSV + comparison PNG
 
+extend_iteration_results
+  -> extend_iteration_results_main
+     -> tamamlanmış iteration sweep'lerini doğrula ve birleştir
+     -> yalnız eksik iteration değerlerini çalıştır
+
 replot_results
   -> replot_results_main
      -> summary/raw yükle
@@ -80,6 +85,7 @@ replot_results
 | `logbin_phase_noise.m` | Log-bin ve SSB dBc/Hz |
 | `validate_config.m` | 12 zorunlu config alanının doğrulanması |
 | `run_comparisons_main.m` | Sweep, zamanlama ve kayıt yönetimi |
+| `extend_iteration_results_main.m` | Tamamlanmış iteration sweep'lerini birleştirme |
 | `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü |
 | `replot_results_main.m` | Kayıtlı sweep'in yeniden çizimi |
 
@@ -118,19 +124,19 @@ iterations=200, log bins=100
 ### `run_comparisons.m`
 
 ```text
-N=100000, fs=1e6, A=1, f0=50e3
-settling=0, LPF=10e3/order 4
-DUT RMS=0.02, Ref RMS=0.02/0.02
+N=1000000, fs=1e6, A=1, f0=200e3
+settling=0, LPF=200e3/order 4
+DUT RMS=0.05, Ref RMS=0.05/0.05
 iterations=100, log bins=100
 ```
 
 Sweep listeleri:
 
 ```text
-lpf_cutoff: [1k, 5k, 7.5k, 10k, 25k, 50k] Hz
+lpf_cutoff: [1k, 5k, 10k, 25k, 50k, 75k, 100k, 200k, 300k] Hz
 rms_dut:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
 rms_ref:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
-iterations: [1, 10, 50, 100, 200, 300]
+iterations: [1, 10, 100, 200, 500, 1000]
 log_bins:   [10, 25, 50, 80, 100, 200]
 ```
 
@@ -139,12 +145,15 @@ Her liste bağımsız tek-parametre sweep'idir; Cartesian ürün değildir.
 ### `run_iterations.m`
 
 ```text
-N=10000, fs=1e6, A=1, f0=200e3
+N=100000, fs=1e6, A=1, f0=200e3
 settling=0, LPF=100e3/order 4
 DUT RMS=0.02, Ref RMS=0.05/0.05
 iterations marker=100, log bins=100
-sweep=[1,10,50,100,200,500,1000,2000,5000,10000,20000]
+sweep=[250,500]
 ```
+
+Bu liste mevcut iteration sonuçlarındaki eksik noktaları tamamlamak için geçici
+çalışma profilidir. Geniş liste dosyada yorum olarak korunur.
 
 ## Sonuç ve Metrik Sözleşmesi
 
@@ -201,6 +210,16 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
 - Kök README, aktif kullanım kılavuzu ve handoff dokümanları güncel kodla
   eşitlendi.
 - Repo `main` branch'i GitHub'a aktarıldı; sonuç dosyaları hariç tutuldu.
+
+### 2026-08-21
+
+- Genel sweep profili `N=1e6`, `f0=200 kHz`, `LPF=200 kHz` ve daha geniş LPF
+  kesim listesine güncellendi.
+- Eksik iteration noktaları için `run_iterations.m` profili `N=100000` ve
+  `[250,500]` listesine ayarlandı.
+- Tamamlanmış iteration sweep'lerini yeniden çalıştırmadan birleştiren
+  `extend_iteration_results.m` ve `extend_iteration_results_main.m` eklendi.
+- Güncel DOCX raporundaki 10 görsel belge içine gömülü olarak yayınlandı.
 
 ## Bilinen Riskler
 

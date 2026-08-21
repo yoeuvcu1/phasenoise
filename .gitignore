@@ -10,6 +10,7 @@
 !*.yaml
 !*.yml
 !*.docx
+~$*.docx
 !.gitignore
 
 # Generated simulation output must never be versioned.

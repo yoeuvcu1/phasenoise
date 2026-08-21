@@ -21,7 +21,7 @@
 %       RESULTS_SUBFOLDER = "20260807_123456_lpf_cutoff";
 % =====================================================================
 
-RESULTS_SUBFOLDER = "20260819_162451251_iterations"; % Yerel klasör adıyla değiştirin.
+RESULTS_SUBFOLDER = "20260821_145510825_iterations_merged"; % Yerel klasör adıyla değiştirin.
 SHOW_FIGURES = true;   % karşılaştırma grafiğini ekranda göster
 
 % Proje ve results yollarını script'in bulunduğu konumdan türet.

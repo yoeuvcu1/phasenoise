@@ -3,6 +3,20 @@
 Bu dosya projenin güncel kronolojik değişiklik kaydıdır. Ayrıntılı kullanım
 için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 
+## 2026-08-21: Son Deney Profili ve Seçilmiş Sonuçlar
+
+- `run_comparisons.m` genel profili `N=1000000`, `f0=200 kHz`,
+  `LPF=200 kHz`, DUT/Ref RMS `0.05 rad` olarak güncellendi.
+- LPF sweep'i `1 kHz` ile `300 kHz` arasında dokuz noktaya genişletildi.
+- Genel iteration sweep listesi `[1,10,100,200,500,1000]` olarak güncellendi.
+- `run_iterations.m`, eksik `250` ve `500` iteration noktalarını `N=100000`
+  profilinde üretmek üzere ayarlandı.
+- `extend_iteration_results.m` ve `extend_iteration_results_main.m` eklendi.
+  Tamamlanmış iteration sweep'leri config uyumluluğu doğrulanarak yeniden
+  simülasyon yapılmadan yeni bir `_iterations_merged` klasöründe birleştirildi.
+- `İki Kanallı Cross.docx` güncellendi; 10 PNG görsel DOCX paketi içine gömülü
+  olarak taşındı.
+
 ## 2026-08-20: Repo Dokümantasyonu ve Yayınlama
 
 - Kök `README.md` eklendi ve tek aktif çalışma alanı açıkça tanımlandı.
