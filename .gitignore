@@ -2,6 +2,7 @@
 *
 !*/
 !*.m
+!*.py
 !*.md
 !*.txt
 !*.csv
@@ -10,8 +11,12 @@
 !*.yaml
 !*.yml
 !*.docx
+!**/report_assets/figures/*.png
 ~$*.docx
 !.gitignore
 
 # Generated simulation output must never be versioned.
 **/results/
+
+# Task-local Python wheels used while building/verifying reports.
+**/.python_deps/
