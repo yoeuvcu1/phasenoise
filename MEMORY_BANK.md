@@ -1,10 +1,15 @@
 # Memory Bank: Phase Noise Cross-Correlation
 
-Son güncelleme: 2026-08-20
+Son güncelleme: 2026-08-24
 
 Bu dosya oturumlar arası teknik handoff kaydıdır. Yeni bir oturumda önce kök
 `README.md`, sonra bu dosya okunmalıdır. Ayrıntılı kullanım ve config sözleşmesi
 aktif klasörün `README.md` dosyasındadır.
+
+## Iletisim Tercihi
+
+- Matematiksel formuller kullaniciya aciklanirken KaTeX uyumlu blok biciminde
+  `$$ ... $$` ile yazilmalidir; `\[ ... \]` bicimi kullanilmamalidir.
 
 ## Aktif Kapsam
 
@@ -115,9 +120,9 @@ Tek bir ortak varsayılan profil yoktur.
 ### `run_single.m`
 
 ```text
-N=100000, fs=1e6, A=1, f0=50e3
-settling=100, LPF=1e3/order 4
-DUT RMS=0.2, Ref RMS=0.05/0.05
+N=100000, fs=1e6, A=1, f0=200e3
+settling=100, LPF=50e3/order 4
+DUT RMS=0.2, Ref RMS=0.5/0.5
 iterations=200, log bins=100
 ```
 
@@ -146,14 +151,11 @@ Her liste bağımsız tek-parametre sweep'idir; Cartesian ürün değildir.
 
 ```text
 N=100000, fs=1e6, A=1, f0=200e3
-settling=0, LPF=100e3/order 4
-DUT RMS=0.02, Ref RMS=0.05/0.05
+settling=0, LPF=50e3/order 4
+DUT RMS=0.02, Ref RMS=0.1/0.1
 iterations marker=100, log bins=100
-sweep=[250,500]
+sweep=[1,10,100,500,1000,2000,5000,10000,20000]
 ```
-
-Bu liste mevcut iteration sonuçlarındaki eksik noktaları tamamlamak için geçici
-çalışma profilidir. Geniş liste dosyada yorum olarak korunur.
 
 ## Sonuç ve Metrik Sözleşmesi
 
@@ -220,6 +222,15 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
 - Tamamlanmış iteration sweep'lerini yeniden çalıştırmadan birleştiren
   `extend_iteration_results.m` ve `extend_iteration_results_main.m` eklendi.
 - Güncel DOCX raporundaki 10 görsel belge içine gömülü olarak yayınlandı.
+
+### 2026-08-24
+
+- Tek-quadrature, I/Q ve `asin` yerleşimlerini aynı Monte Carlo girdilerinde
+  karşılaştıran `iq_demod_comparison/` çalışma alanı eklendi.
+- `run_single.m` profili `f0=200 kHz`, `LPF=50 kHz`, Ref RMS `0.5 rad` olarak
+  güncellendi.
+- `run_iterations.m` profili `LPF=50 kHz`, Ref RMS `0.1 rad` ve dokuz noktalı
+  iteration listesine güncellendi.
 
 ## Bilinen Riskler
 

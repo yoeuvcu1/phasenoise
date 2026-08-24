@@ -3,7 +3,17 @@
 Bu dosya projenin güncel kronolojik değişiklik kaydıdır. Ayrıntılı kullanım
 için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 
-## 2026-08-21: Son Deney Profili ve Seçilmiş Sonuçlar
+## 2026-08-24: I/Q ve Asin Karşılaştırmaları
+
+- `iq_demod_comparison/` altında tek-quadrature ve I/Q demodulasyonunu aynı
+  Monte Carlo realizasyonlarıyla karşılaştıran bağımsız çalışma alanı eklendi.
+- `asin` işleminin mixer sonrası veya LPF sonrası uygulanmasını sabit RNG seed
+  ve aynı realizasyonlarla karşılaştıran altı panelli deney eklendi.
+- `run_single.m` taşıyıcı/LPF/referans profili ve `run_iterations.m` iteration
+  profili güncellendi.
+- Güncel DOCX raporu 13 gömülü görselle yenilendi.
+
+## 2026-08-21: Son Deney Profili ve Birleştirme Akışı
 
 - `run_comparisons.m` genel profili `N=1000000`, `f0=200 kHz`,
   `LPF=200 kHz`, DUT/Ref RMS `0.05 rad` olarak güncellendi.

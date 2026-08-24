@@ -13,6 +13,7 @@
 !*.docx
 !**/report_assets/figures/*.png
 ~$*.docx
+* - Copy.docx
 !.gitignore
 
 # Generated simulation output must never be versioned.

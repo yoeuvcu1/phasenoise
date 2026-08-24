@@ -23,12 +23,14 @@ x_ref2 = A*cos(quadrature_phase + phase_noise_ref2);
 % sinyaliyle çarparak iki paralel faz detektörü kanalı üretir.
 reference_signals = [x_ref1, x_ref2];
 mixed_signals = mixer(x_dut, reference_signals);
+%% mixed_signals = asin(mixed_signals);
 
 %% ---------------- LOW-PASS FILTER ----------------
 % LPF, çarpımdan gelen toplam-frekans bileşenini bastırır. K_pd bölümü filtre
 % çıkışını yaklaşık faz hatası (rad) ölçeğine getirir.
 phase_error = lowpass_filter( ...
     mixed_signals, fs, lpf_cutoff, lpf_order) / K_pd;
+%% phase_error = asin(phase_error);
 
 %% ---------------- CHANNEL PREPARATION ----------------
 % IIR filtrenin başlangıç geçicisini at, ardından her kanalın sabit ofsetini

@@ -59,6 +59,8 @@ kullandığı için MATLAB desteği doğrulanmış değildir.
 | `run_iterations.m` | Yalnız iterasyon sayısı sweep'i | Varsayılan liste uzun sürer |
 | `extend_iteration_results.m` | Eski iteration sweep'ine değer ekler | Eski koşuları yeniden çalıştırmaz |
 | `replot_results.m` | Kayıtlı sweep'leri yeniden çizer | Simülasyon çalıştırmaz |
+| `iq_demod_comparison/run_iq_comparison.m` | Tek-quadrature ve I/Q detektörlerini karşılaştırır | Kalıcı dosya yazmaz |
+| `iq_demod_comparison/run_asin_realization_comparison.m` | `asin` yerleşimini aynı realizasyonlarda karşılaştırır | Sabit RNG seed kullanır |
 | `run_simulation.m` | Doğrudan programatik API | Tüm config alanları zorunludur |
 
 Betikler başka bir çalışma dizininden başlatılsa da kendi klasörlerini
@@ -107,8 +109,8 @@ run(fullfile(project_dir, "run_single.m"));
 Varsayılan profil:
 
 ```text
-N=100000, fs=1e6, f0=50e3, settling=100, LPF=1e3
-DUT RMS=0.2, Ref RMS=0.05/0.05, iterations=200, log bins=100
+N=100000, fs=1e6, f0=200e3, settling=100, LPF=50e3
+DUT RMS=0.2, Ref RMS=0.5/0.5, iterations=200, log bins=100
 ```
 
 Sonuç `results`, figür `fig` değişkenine gelir. Batch dizini oluşturulmaz.
@@ -141,16 +143,12 @@ iteration sweep=[1,10,100,200,500,1000]
 run(fullfile(project_dir, "run_iterations.m"));
 ```
 
-Bu betik şu anda `N=100000`, `f0=200e3`, `LPF=100e3`, DUT RMS `0.02`, Ref
-RMS `0.05/0.05` profilini ve ek koşu listesini kullanır:
+Bu betik şu anda `N=100000`, `f0=200e3`, `LPF=50e3`, DUT RMS `0.02`, Ref
+RMS `0.1/0.1` profilini ve iteration listesini kullanır:
 
 ```matlab
-[250, 500]
+[1, 10, 100, 500, 1000, 2000, 5000, 10000, 20000]
 ```
-
-Dosyada daha geniş iteration listesi yorum olarak korunur. Mevcut `[250, 500]`
-listesi, daha önce tamamlanmış sweep'lere eksik noktaları eklemek için
-ayarlanmıştır.
 
 ### Mevcut Iteration Sweep'ini Genişletme
 
