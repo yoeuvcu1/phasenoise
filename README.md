@@ -82,7 +82,6 @@ bakın.
 ├── README.md
 ├── MEMORY_BANK.md
 ├── CHANGES.md
-├── PROJE_RAPORU_TASLAGI.md
 ├── phasedetector with cross correlation optimized/   # aktif uygulama
 ├── phasedetector with cross correlation/             # legacy referans
 ├── *.m                                               # eski/bağımsız deney araçları
@@ -92,8 +91,6 @@ bakın.
 - `MEMORY_BANK.md`: sonraki çalışma oturumu için güncel durum, kararlar,
   riskler ve öncelikli işler.
 - `CHANGES.md`: projenin kronolojik değişiklik kaydı.
-- `PROJE_RAPORU_TASLAGI.md`: teknik rapor taslağı; sonuç bölümleri
-  2026-08-19/20 tarihli yerel deney anlık görüntüleridir.
 - Kök `*.m` dosyaları aktif optimize akışın runtime bağımlılığı değildir.
 - `.opencode/` opsiyonel araç dokümanıdır; simülasyonu çalıştırmak için gerekli
   değildir.

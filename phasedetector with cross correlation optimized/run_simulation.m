@@ -2,8 +2,8 @@ function results = run_simulation(config)
 % Cross-PSD faz gürültüsü simülasyonunu çalıştıran ana işlev.
 %
 % Her iterasyonda yeni DUT ve Ref1/Ref2 realizasyonları üretilir. Dönen results
-% yapısında ortalama Cross-PSD, ortalama DUT periodogramı, log-binlenmiş eğriler,
-% correction factor ve iki ortalama eğrinin MAE değeri bulunur.
+% yapısında ortalama Cross-PSD, ortalama DUT periodogramı, log-binlenmiş eğriler
+% ve iki ortalama eğrinin MAE değeri bulunur.
 
 %% ---------------- OCTAVE SIGNAL PACKAGE ----------------
 % Octave'de signal paketini yalnızca bir kez yükle.
@@ -40,7 +40,7 @@ carrier_phase = 2*pi*f0*t;
 quadrature_phase = carrier_phase + pi/2;
 
 %% ---------------- PHASE DETECTOR GAIN ----------------
-% Çarpım faz detektörü çıkışını rad cinsine ölçekleyen küçük-sinyal kazancı.
+% Çarpım faz detektörünün LPF çıkışını sin(faz hatası) ölçeğine getiren kazanç.
 % LPF tasarımı ve uygulaması lowpass_filter.m içinde tek devre bloğundadır.
 K_pd = A^2 / 2;
 
@@ -94,28 +94,10 @@ fprintf("\n");
 S_cross_average = S_cross_sum / number_of_iterations;
 valid_cross = f_cross > 0;
 
-%% ---------------- NONLINEARITY CORRECTION ----------------
-% Ölçülen Cross-PSD gücünden sinüzoidal faz detektörünün güç sıkışmasını
-% geri al.
-min_log_argument = 1e-10;
-frequency_step = f_cross(2) - f_cross(1);
-total_power_sin = sum(abs(S_cross_average(valid_cross))) * frequency_step;
-log_argument = 1 - 2*total_power_sin;
-sigma2_est = -0.5 * log(max(log_argument, min_log_argument));
-
-% Güç veya tahmin sıfırsa spektrumu değiştirmemek için correction=1 kullan.
-if total_power_sin > 0 && sigma2_est > 0
-    correction_factor = sigma2_est / total_power_sin;
-else
-    correction_factor = 1;
-end
-
-S_cross_corrected = S_cross_average * correction_factor;
-
 %% ---------------- CROSS-PSD LOG BINNING ----------------
 [f_cross_binned, L_cross_binned] = logbin_phase_noise( ...
     f_cross(valid_cross), ...
-    abs(S_cross_corrected(valid_cross)), ...
+    abs(S_cross_average(valid_cross)), ...
     number_of_log_bins);
 
 %% ---------------- DUT REFERENCE PERIODOGRAM ----------------
@@ -165,10 +147,9 @@ fprintf("Ortalama mutlak fark (Cross-PSD - unfiltered DUT): %.3f dB\n", ...
 % Tam çözünürlüklü spektrumlar replot/inceleme için, binned alanlar doğrudan
 % grafik çizmek için saklanır.
 results.config = config;
-results.correction_factor = correction_factor;
 results.mean_absolute_error_fft_db = mean_absolute_error_fft_db;
 results.cross.frequency = f_cross;
-results.cross.psd = S_cross_corrected;
+results.cross.psd = S_cross_average;
 results.cross.frequency_binned = f_cross_binned;
 results.cross.phase_noise_binned = L_cross_binned;
 results.dut_fft.frequency = f_dut_fft;

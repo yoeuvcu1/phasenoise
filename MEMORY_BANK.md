@@ -1,6 +1,6 @@
 # Memory Bank: Phase Noise Cross-Correlation
 
-Son güncelleme: 2026-08-24
+Son güncelleme: 2026-08-25
 
 Bu dosya oturumlar arası teknik handoff kaydıdır. Yeni bir oturumda önce kök
 `README.md`, sonra bu dosya okunmalıdır. Ayrıntılı kullanım ve config sözleşmesi
@@ -65,11 +65,6 @@ run_comparisons / run_iterations
      -> run_simulation
      -> raw MAT + summary MAT/CSV + comparison PNG
 
-extend_iteration_results
-  -> extend_iteration_results_main
-     -> tamamlanmış iteration sweep'lerini doğrula ve birleştir
-     -> yalnız eksik iteration değerlerini çalıştır
-
 replot_results
   -> replot_results_main
      -> summary/raw yükle
@@ -90,7 +85,6 @@ replot_results
 | `logbin_phase_noise.m` | Log-bin ve SSB dBc/Hz |
 | `validate_config.m` | 12 zorunlu config alanının doğrulanması |
 | `run_comparisons_main.m` | Sweep, zamanlama ve kayıt yönetimi |
-| `extend_iteration_results_main.m` | Tamamlanmış iteration sweep'lerini birleştirme |
 | `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü |
 | `replot_results_main.m` | Kayıtlı sweep'in yeniden çizimi |
 
@@ -130,7 +124,7 @@ iterations=200, log bins=100
 
 ```text
 N=1000000, fs=1e6, A=1, f0=200e3
-settling=0, LPF=200e3/order 4
+settling=0, LPF=50e3/order 4
 DUT RMS=0.05, Ref RMS=0.05/0.05
 iterations=100, log bins=100
 ```
@@ -141,7 +135,7 @@ Sweep listeleri:
 lpf_cutoff: [1k, 5k, 10k, 25k, 50k, 75k, 100k, 200k, 300k] Hz
 rms_dut:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
 rms_ref:    [0.01, 0.02, 0.05, 0.1, 0.2, 0.5] rad
-iterations: [1, 10, 100, 200, 500, 1000]
+iterations: [] (geçici olarak devre dışı)
 log_bins:   [10, 25, 50, 80, 100, 200]
 ```
 
@@ -150,7 +144,7 @@ Her liste bağımsız tek-parametre sweep'idir; Cartesian ürün değildir.
 ### `run_iterations.m`
 
 ```text
-N=100000, fs=1e6, A=1, f0=200e3
+N=1000000, fs=1e6, A=1, f0=200e3
 settling=0, LPF=50e3/order 4
 DUT RMS=0.02, Ref RMS=0.1/0.1
 iterations marker=100, log bins=100
@@ -231,6 +225,18 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
   güncellendi.
 - `run_iterations.m` profili `LPF=50 kHz`, Ref RMS `0.1 rad` ve dokuz noktalı
   iteration listesine güncellendi.
+
+### 2026-08-25
+
+- Aktif Octave ve MATLAB akışlarında `asin` LPF ve `K_pd` normalizasyonundan
+  sonra uygulanacak şekilde sadeleştirme yapıldı.
+- Geçici iteration birleştirme scriptleri ve bağımsız `iq_demod_comparison/`
+  deney alanı aktif ağaçtan kaldırıldı.
+- Eski rapor taslağı, MATLAB rapor üretim varlıkları, seçilmiş figür/CSV
+  kanıtları ve ayrı üretilmiş MATLAB DOCX raporu kaldırıldı.
+- Octave genel sweep LPF varsayılanı `50 kHz` yapıldı ve iteration sweep'i
+  geçici olarak devre dışı bırakıldı.
+- Kök `İki Kanallı Cross.docx` güncel tek rapor olarak yenilendi.
 
 ## Bilinen Riskler
 

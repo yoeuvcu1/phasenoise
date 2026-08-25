@@ -2,8 +2,8 @@ function results = run_simulation(config)
 % Cross-PSD faz gürültüsü simülasyonunu çalıştıran ana işlev.
 %
 % Her iterasyonda yeni DUT ve Ref1/Ref2 realizasyonları üretilir. Dönen results
-% yapısında ortalama Cross-PSD, ortalama DUT periodogramı, log-binlenmiş eğriler,
-% correction factor ve iki ortalama eğrinin MAE değeri bulunur.
+% yapısında ortalama Cross-PSD, ortalama DUT periodogramı, log-binlenmiş eğriler
+% ve iki ortalama eğrinin MAE değeri bulunur.
 
 %% ---------------- CONFIG VALIDATION ----------------
 % Boyut, frekans ve sayım hatalarını büyük diziler oluşturulmadan yakala.
@@ -24,19 +24,6 @@ phase_rms_ref2 = config.phase_rms_ref2;
 number_of_iterations = config.number_of_iterations;
 number_of_log_bins = config.number_of_log_bins;
 
-% Uzun MATLAB GUI koşularında Command Window çizim maliyetini sınırlamak için
-% ilerleme satırı isteğe bağlı olarak seyrekleştirilebilir. Alan verilmezse
-% mevcut davranış korunur ve her iterasyon yazdırılır.
-progress_interval = 1;
-if isfield(config, "progress_interval")
-    progress_interval = config.progress_interval;
-    if ~isnumeric(progress_interval) || ~isscalar(progress_interval) || ...
-            ~isfinite(progress_interval) || progress_interval <= 0 || ...
-            progress_interval ~= fix(progress_interval)
-        error("config.progress_interval pozitif bir tamsayi olmalidir.");
-    end
-end
-
 %% ---------------- CARRIER TIME BASE ----------------
 % Taşıyıcı zaman tabanı ve referansların quadrature merkez fazı bütün
 % iterasyonlarda aynıdır; rastgele DUT/Ref faz realizasyonları döngüde yenilenir.
@@ -45,7 +32,7 @@ carrier_phase = 2*pi*f0*t;
 quadrature_phase = carrier_phase + pi/2;
 
 %% ---------------- PHASE DETECTOR GAIN ----------------
-% Çarpım faz detektörü çıkışını rad cinsine ölçekleyen küçük-sinyal kazancı.
+% Çarpım faz detektörünün LPF çıkışını sin(faz hatası) ölçeğine getiren kazanç.
 % LPF tasarımı ve uygulaması lowpass_filter.m içinde tek devre bloğundadır.
 K_pd = A^2 / 2;
 
@@ -88,11 +75,8 @@ for iteration = 1:number_of_iterations
     S_dut_sum = S_dut_sum + S_dut_current;
 
     iteration_seconds = toc(iteration_timer);
-    if iteration == 1 || mod(iteration, progress_interval) == 0 || ...
-            iteration == number_of_iterations
-        fprintf("\rIterasyon %d/%d | Iterasyon suresi: %.3f s", ...
-            iteration, number_of_iterations, iteration_seconds);
-    end
+    fprintf("\rIterasyon %d/%d | Iterasyon suresi: %.3f s", ...
+        iteration, number_of_iterations, iteration_seconds);
 end
 fprintf("\n");
 
@@ -102,28 +86,10 @@ fprintf("\n");
 S_cross_average = S_cross_sum / number_of_iterations;
 valid_cross = f_cross > 0;
 
-%% ---------------- NONLINEARITY CORRECTION ----------------
-% Ölçülen Cross-PSD gücünden sinüzoidal faz detektörünün güç sıkışmasını
-% geri al.
-min_log_argument = 1e-10;
-frequency_step = f_cross(2) - f_cross(1);
-total_power_sin = sum(abs(S_cross_average(valid_cross))) * frequency_step;
-log_argument = 1 - 2*total_power_sin;
-sigma2_est = -0.5 * log(max(log_argument, min_log_argument));
-
-% Güç veya tahmin sıfırsa spektrumu değiştirmemek için correction=1 kullan.
-if total_power_sin > 0 && sigma2_est > 0
-    correction_factor = sigma2_est / total_power_sin;
-else
-    correction_factor = 1;
-end
-
-S_cross_corrected = S_cross_average * correction_factor;
-
 %% ---------------- CROSS-PSD LOG BINNING ----------------
 [f_cross_binned, L_cross_binned] = logbin_phase_noise( ...
     f_cross(valid_cross), ...
-    abs(S_cross_corrected(valid_cross)), ...
+    abs(S_cross_average(valid_cross)), ...
     number_of_log_bins);
 
 %% ---------------- DUT REFERENCE PERIODOGRAM ----------------
@@ -173,13 +139,9 @@ fprintf("Ortalama mutlak fark (Cross-PSD - unfiltered DUT): %.3f dB\n", ...
 % Tam çözünürlüklü spektrumlar replot/inceleme için, binned alanlar doğrudan
 % grafik çizmek için saklanır.
 results.config = config;
-if isfield(results.config, "progress_interval")
-    results.config = rmfield(results.config, "progress_interval");
-end
-results.correction_factor = correction_factor;
 results.mean_absolute_error_fft_db = mean_absolute_error_fft_db;
 results.cross.frequency = f_cross;
-results.cross.psd = S_cross_corrected;
+results.cross.psd = S_cross_average;
 results.cross.frequency_binned = f_cross_binned;
 results.cross.phase_noise_binned = L_cross_binned;
 results.dut_fft.frequency = f_dut_fft;

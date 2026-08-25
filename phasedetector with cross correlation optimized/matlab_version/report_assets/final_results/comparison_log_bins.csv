@@ -1,7 +1,0 @@
-run_file,value,mean_abs_error_db,correction_factor,elapsed_s
-run_01_log_bins_10.mat,10,2.481905,1.002540,11.734
-run_02_log_bins_25.mat,25,2.063567,1.002202,11.591
-run_03_log_bins_50.mat,50,1.615065,1.002068,11.472
-run_04_log_bins_80.mat,80,1.534158,1.002349,12.888
-run_05_log_bins_100.mat,100,1.395794,1.002459,12.532
-run_06_log_bins_200.mat,200,1.708257,1.002456,11.715

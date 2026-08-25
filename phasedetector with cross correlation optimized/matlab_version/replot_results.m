@@ -10,7 +10,7 @@
 %   4. Mevcut karşılaştırma PNG'si yeni grafikle güncellenir.
 %
 % Çalıştırma biçimi run_comparisons.m ile aynıdır. Örnek:
-%   project_dir = "/path/to/phasedetector with cross correlation optimized";
+%   project_dir = "/path/to/phasedetector with cross correlation optimized/matlab_version";
 %   run(fullfile(project_dir, "replot_results.m"));
 %
 % Grafikler MATLAB GUI'de gösterilebilir ve PNG olarak kaydedilir.
@@ -21,7 +21,7 @@
 %       RESULTS_SUBFOLDER = "20260807_123456_lpf_cutoff";
 % =====================================================================
 
-RESULTS_SUBFOLDER = "20260821_145510825_iterations_merged"; % Yerel klasör adıyla değiştirin.
+RESULTS_SUBFOLDER = ""; % Tüm yerel sonuçları çiz; gerekirse tek klasör adı verin.
 SHOW_FIGURES = true;   % karşılaştırma grafiğini ekranda göster
 
 % Proje ve results yollarını script'in bulunduğu konumdan türet.

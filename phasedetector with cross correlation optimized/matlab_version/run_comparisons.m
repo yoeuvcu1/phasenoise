@@ -14,7 +14,7 @@ default_config.fs = 1e6;                   % Örnekleme frekansı (Hz)
 default_config.A = 1;                      % Taşıyıcı genliği
 default_config.f0 = 200e3;                  % Taşıyıcı frekansı (Hz)
 default_config.settling_samples = 0;     % LPF geçici rejimi için atılan örnek
-default_config.lpf_cutoff = 200e3;          % LPF kesim frekansı (Hz)
+default_config.lpf_cutoff = 50e3;           % LPF kesim frekansı (Hz)
 default_config.lpf_order = 4;              % LPF derecesi
 default_config.phase_rms_dut = 0.05;        % DUT faz gürültüsü RMS (rad)
 default_config.phase_rms_ref1 = 0.05;      % Referans 1 RMS (rad)
@@ -29,10 +29,10 @@ test_values = struct();
 test_values.lpf_cutoff = [1e3, 5e3, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 300e3];   % Hz
 test_values.rms_dut = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5];   % rad
 test_values.rms_ref = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5]; % rad; iki referans birlikte değişir
-test_values.iterations = [1, 10, 100, 200, 500, 1000];   % adet
+test_values.iterations = []; % Gecici olarak devre disi
 test_values.log_bins = [10, 25, 50, 80, 100, 200];      % adet
 
-show_figures = false; % Uzun MATLAB batch koşusunda figürleri kaydet ve kapat
+show_figures = true; % Karşılaştırma figürlerini ekranda göster
 
 %% ---------------- RUN SWEEPS ----------------
 % Script başka bir çalışma klasöründen başlatılsa da proje fonksiyonlarını bul.

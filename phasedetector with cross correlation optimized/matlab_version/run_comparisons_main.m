@@ -18,14 +18,6 @@ function run_comparisons_main(default_config, test_values, show_figures, project
 % Hatalı temel ayarlarla uzun sweep'e başlamadan önce config'i kontrol et.
 validate_config(default_config);
 
-% Arayüzde desteklenen tüm test alanlarının tanımlandığını doğrula.
-required_tests = {"lpf_cutoff", "rms_dut", "rms_ref", "iterations", "log_bins"};
-for test_index = 1:numel(required_tests)
-    if ~isfield(test_values, required_tests{test_index})
-        error("Eksik test ayari: test_values.%s", required_tests{test_index});
-    end
-end
-
 % Bütün test klasörleri aynı milisaniyeli zaman damgasını kullanır; test adı
 % klasör sonuna eklenerek aynı batch'e ait sonuçlar birlikte görülebilir.
 results_dir = fullfile(project_dir, "results");
@@ -37,7 +29,7 @@ run_stamp = char(datetime("now", "Format", "yyyyMMdd_HHmmssSSS"));
 % Kullanıcı arayüzündeki listeleri ortak bir sweep tanım biçimine dönüştür.
 % fields, değer uygulanacak config alanlarını; label_fmt, subplot etiketini tutar.
 sweep_specs = {};
-if ~isempty(test_values.lpf_cutoff)
+if isfield(test_values, "lpf_cutoff") && ~isempty(test_values.lpf_cutoff)
     spec = struct();
     spec.name = "lpf_cutoff";
     spec.fields = {"lpf_cutoff"};
@@ -47,7 +39,7 @@ if ~isempty(test_values.lpf_cutoff)
     spec.default = default_config.lpf_cutoff;
     sweep_specs{end+1} = spec;
 end
-if ~isempty(test_values.rms_dut)
+if isfield(test_values, "rms_dut") && ~isempty(test_values.rms_dut)
     spec = struct();
     spec.name = "rms_dut";
     spec.fields = {"phase_rms_dut"};
@@ -57,7 +49,7 @@ if ~isempty(test_values.rms_dut)
     spec.default = default_config.phase_rms_dut;
     sweep_specs{end+1} = spec;
 end
-if ~isempty(test_values.rms_ref)
+if isfield(test_values, "rms_ref") && ~isempty(test_values.rms_ref)
     % Tek "rms_ref" değeri iki bağımsız referans kanalına birlikte uygulanır.
     if default_config.phase_rms_ref1 ~= default_config.phase_rms_ref2
         error("rms_ref testi icin varsayilan Ref1 ve Ref2 RMS esit olmalidir.");
@@ -71,7 +63,7 @@ if ~isempty(test_values.rms_ref)
     spec.default = default_config.phase_rms_ref1;
     sweep_specs{end+1} = spec;
 end
-if ~isempty(test_values.iterations)
+if isfield(test_values, "iterations") && ~isempty(test_values.iterations)
     spec = struct();
     spec.name = "iterations";
     spec.fields = {"number_of_iterations"};
@@ -81,7 +73,7 @@ if ~isempty(test_values.iterations)
     spec.default = default_config.number_of_iterations;
     sweep_specs{end+1} = spec;
 end
-if ~isempty(test_values.log_bins)
+if isfield(test_values, "log_bins") && ~isempty(test_values.log_bins)
     spec = struct();
     spec.name = "log_bins";
     spec.fields = {"number_of_log_bins"};
@@ -105,17 +97,16 @@ for spec_index = 1:numel(sweep_specs)
 end
 
 % Genel özeti sabit genişlikli bir tablo olarak yaz.
-fprintf("\n%-14s | %12s | %10s | %10s | %10s\n", ...
-    "TEST", "DEGER", "MAE (dB)", "CORRECTION", "SURE (s)");
-fprintf("%s\n", repmat("-", 1, 69));
+fprintf("\n%-14s | %12s | %10s | %10s\n", ...
+    "TEST", "DEGER", "MAE (dB)", "SURE (s)");
+fprintf("%s\n", repmat("-", 1, 55));
 for spec_index = 1:numel(sweep_specs)
     spec = sweep_specs{spec_index};
     summary = summaries.(spec.name);
     for value_index = 1:numel(summary.values)
-        fprintf("%-14s | %12g | %10.3f | %10.4f | %10.2f\n", ...
+        fprintf("%-14s | %12g | %10.3f | %10.2f\n", ...
             spec.name, summary.values(value_index), ...
             summary.mean_absolute_error_db(value_index), ...
-            summary.correction_factors(value_index), ...
             summary.elapsed_seconds(value_index));
     end
 end
@@ -141,7 +132,6 @@ mkdir(plot_dir);
 run_results = cell(1, number_of_values);
 run_files = cell(1, number_of_values);
 mean_absolute_error_db = zeros(1, number_of_values);
-correction_factors = zeros(1, number_of_values);
 elapsed_seconds = zeros(1, number_of_values);
 
 fprintf("\n=== TARAMA: %s ===\n", spec.name);
@@ -155,11 +145,6 @@ for value_index = 1:number_of_values
         config.(spec.fields{field_index}) = value;
     end
 
-    % MATLAB GUI'de uzun koşuların Command Window yükünü sınırlamak için en
-    % fazla yaklaşık 100 ilerleme satırı yazdır. Bu geçici alan sonuç config'ine
-    % kaydedilmez ve deney parametrelerini değiştirmez.
-    config.progress_interval = max(1, ceil(config.number_of_iterations/100));
-
     % run_simulation tek bir tam DUT/Ref simülasyonu ve Cross-PSD ortalaması yapar.
     run_timer = tic;
     current_results = run_simulation(config);
@@ -168,7 +153,6 @@ for value_index = 1:number_of_values
     % Grafik ve özet için yalnızca gerekli sonuç ve metrikleri bellekte tut.
     run_results{value_index} = current_results;
     mean_absolute_error_db(value_index) = current_results.mean_absolute_error_fft_db;
-    correction_factors(value_index) = current_results.correction_factor;
 
     % Tam spektrumları büyük dizileri de destekleyen MATLAB v7.3 biçiminde sakla.
     run_file = sprintf("run_%02d_%s_%s.mat", ...
@@ -178,9 +162,8 @@ for value_index = 1:number_of_values
     save(fullfile(raw_dir, run_file), ...
         "current_results", "elapsed_seconds_current", "value", "-v7.3");
 
-    fprintf("  %s = %g | MAE: %.3f dB | corr: %.4f | sure: %.2f s | %s\n", ...
+    fprintf("  %s = %g | MAE: %.3f dB | sure: %.2f s | %s\n", ...
         spec.field_label, value, mean_absolute_error_db(value_index), ...
-        correction_factors(value_index), ...
         elapsed_seconds(value_index), run_file);
 end
 
@@ -199,7 +182,6 @@ sweep_summary.default_value = spec.default;
 sweep_summary.values = spec.values;
 sweep_summary.run_files = run_files;
 sweep_summary.mean_absolute_error_db = mean_absolute_error_db;
-sweep_summary.correction_factors = correction_factors;
 sweep_summary.elapsed_seconds = elapsed_seconds;
 sweep_summary.config_template = default_config;
 sweep_summary.timestamp = run_stamp;
@@ -230,13 +212,12 @@ file_id = fopen(csv_path, "w");
 if file_id < 0
     error("CSV dosyasi acilamadi: %s", csv_path);
 end
-fprintf(file_id, "run_file,value,mean_abs_error_db,correction_factor,elapsed_s\n");
+fprintf(file_id, "run_file,value,mean_abs_error_db,elapsed_s\n");
 for value_index = 1:numel(sweep_summary.values)
-    fprintf(file_id, "%s,%g,%.6f,%.6f,%.3f\n", ...
+    fprintf(file_id, "%s,%g,%.6f,%.3f\n", ...
         sweep_summary.run_files{value_index}, ...
         sweep_summary.values(value_index), ...
         sweep_summary.mean_absolute_error_db(value_index), ...
-        sweep_summary.correction_factors(value_index), ...
         sweep_summary.elapsed_seconds(value_index));
 end
 fclose(file_id);

@@ -1,7 +1,0 @@
-run_file,value,mean_abs_error_db,correction_factor,elapsed_s
-run_01_rms_dut_0p01.mat,0.01,5.221920,1.000115,11.517
-run_02_rms_dut_0p02.mat,0.02,3.373746,1.000272,11.343
-run_03_rms_dut_0p05.mat,0.05,1.559933,1.002657,11.171
-run_04_rms_dut_0p1.mat,0.1,0.841158,1.009741,10.967
-run_05_rms_dut_0p2.mat,0.2,0.535676,1.040998,10.949
-run_06_rms_dut_0p5.mat,0.5,0.803766,1.301961,10.862

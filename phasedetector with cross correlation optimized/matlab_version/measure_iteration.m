@@ -26,9 +26,14 @@ mixed_signals = mixer(x_dut, reference_signals);
 
 %% ---------------- LOW-PASS FILTER ----------------
 % LPF, çarpımdan gelen toplam-frekans bileşenini bastırır. K_pd bölümü filtre
-% çıkışını yaklaşık faz hatası (rad) ölçeğine getirir.
-phase_error = lowpass_filter( ...
+% çıkışını sin(faz hatası) ölçeğine getirir.
+phase_sine = lowpass_filter( ...
     mixed_signals, fs, lpf_cutoff, lpf_order) / K_pd;
+
+% Sayısal veya filtre geçicisi kaynaklı küçük taşmaları gerçek asin aralığına
+% sınırla; asin, sinüzoidal detektör karakteristiğini faz hatasına geri çevirir.
+phase_sine = min(max(phase_sine, -1), 1);
+phase_error = asin(phase_sine);
 
 %% ---------------- CHANNEL PREPARATION ----------------
 % IIR filtrenin başlangıç geçicisini at, ardından her kanalın sabit ofsetini

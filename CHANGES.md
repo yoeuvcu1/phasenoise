@@ -3,6 +3,22 @@
 Bu dosya projenin güncel kronolojik değişiklik kaydıdır. Ayrıntılı kullanım
 için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 
+## 2026-08-25: Akış Sadeleştirme ve Temizlik
+
+- Octave ve MATLAB ölçüm akışlarında `asin`, LPF ve `K_pd`
+  normalizasyonundan sonra uygulanacak biçimde güncellendi.
+- Sweep yürütme, plotting, validation ve tek koşu profillerinde ilgili akış
+  değişiklikleri yapıldı.
+- Octave genel sweep LPF varsayılanı `50 kHz` oldu; iteration sweep'i geçici
+  olarak kapatıldı.
+- Geçici iteration birleştirme scriptleri ve `iq_demod_comparison/` deney
+  klasörü kaldırıldı.
+- Eski Markdown rapor taslağı ile MATLAB rapor planı, üretici scripti, QA,
+  figür ve özet CSV varlıkları kaldırıldı.
+- Ayrı MATLAB DOCX çıktısı kaldırıldı; kök `İki Kanallı Cross.docx` güncel tek
+  rapor olarak yaklaşık 2,18 MB'a yükseltildi.
+- `results/` çıktıları ve yeni bağımsız JPG görsel commit dışında bırakıldı.
+
 ## 2026-08-24: I/Q ve Asin Karşılaştırmaları
 
 - `iq_demod_comparison/` altında tek-quadrature ve I/Q demodulasyonunu aynı

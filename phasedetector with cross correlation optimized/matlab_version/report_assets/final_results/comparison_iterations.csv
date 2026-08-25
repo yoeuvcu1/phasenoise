@@ -1,7 +1,0 @@
-run_file,value,mean_abs_error_db,correction_factor,elapsed_s
-run_01_iterations_1.mat,1,5.119062,1.001983,0.211
-run_02_iterations_10.mat,10,2.805762,1.002136,1.160
-run_03_iterations_100.mat,100,2.055674,1.002610,11.721
-run_04_iterations_200.mat,200,1.471845,1.002403,22.925
-run_05_iterations_500.mat,500,1.532481,1.002420,57.765
-run_06_iterations_1000.mat,1000,1.386740,1.002530,113.496

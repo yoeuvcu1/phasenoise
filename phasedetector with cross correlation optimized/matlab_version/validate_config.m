@@ -52,8 +52,8 @@ if config.lpf_cutoff <= 0 || config.lpf_cutoff >= config.fs/2
     error("config.lpf_cutoff, (0, fs/2) araliginda olmalidir.");
 end
 if 2*config.f0 <= config.lpf_cutoff
-    error(["2*config.f0, lpf_cutoff degerinden buyuk olmalidir; ", ...
-        "tasiyici toplam-frekans bileseni LPF bandina giremez."]);
+    error(['2*config.f0, lpf_cutoff degerinden buyuk olmalidir; ', ...
+        'tasiyici toplam-frekans bileseni LPF bandina giremez.']);
 end
 if config.lpf_order <= 0 || config.lpf_order ~= fix(config.lpf_order)
     error("config.lpf_order pozitif bir tamsayi olmalidir.");
