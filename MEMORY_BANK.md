@@ -237,6 +237,8 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
 - Octave genel sweep LPF varsayılanı `50 kHz` yapıldı ve iteration sweep'i
   geçici olarak devre dışı bırakıldı.
 - Kök `İki Kanallı Cross.docx` güncel tek rapor olarak yenilendi.
+- MATLAB Monte Carlo döngüsü `parfor` ile paralelleştirildi;
+  `run_iterations.m` thread havuzunu, gerekirse process havuzunu otomatik açar.
 
 ## Bilinen Riskler
 
@@ -254,7 +256,8 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
    bulunmaz.
 7. **Kısmi sonuç mümkün.** Sweep yarıda kesilirse raw dosyalar kalır fakat
    summary/plot oluşmayabilir.
-8. **MATLAB uyumluluğu yok.** Aktif çalışma ortamı GNU Octave'dır.
+8. **MATLAB ayrı bağımlılıklara sahip.** `matlab_version/` Signal Processing
+   Toolbox ve paralel koşular için Parallel Computing Toolbox gerektirir.
 
 ## Öncelikli Sonraki İşler
 

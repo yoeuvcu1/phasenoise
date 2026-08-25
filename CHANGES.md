@@ -18,6 +18,10 @@ için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 - Ayrı MATLAB DOCX çıktısı kaldırıldı; kök `İki Kanallı Cross.docx` güncel tek
   rapor olarak yaklaşık 2,18 MB'a yükseltildi.
 - `results/` çıktıları ve yeni bağımsız JPG görsel commit dışında bırakıldı.
+- MATLAB Monte Carlo döngüsü `parfor` ile paralelleştirildi; iteration giriş
+  betiğine otomatik thread havuzu ve process havuzu fallback'i eklendi.
+- MATLAB README'ye Parallel Computing Toolbox gereksinimi ve worker davranışı
+  eklendi.
 
 ## 2026-08-24: I/Q ve Asin Karşılaştırmaları
 

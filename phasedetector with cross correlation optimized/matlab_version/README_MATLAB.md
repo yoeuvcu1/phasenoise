@@ -8,6 +8,7 @@ surume dahil edilmemistir.
 
 - MATLAB R2021a veya daha yeni bir surum
 - Signal Processing Toolbox (`butter` fonksiyonu icin)
+- Parallel Computing Toolbox (`parfor` ve paralel havuz icin)
 
 ## Calistirma
 
@@ -47,6 +48,9 @@ Octave `results/` klasoru ayri kalir ve MATLAB calismalarindan etkilenmez.
 - Ham spektrumlar ve ozetler buyuk dizileri desteklemek icin `-v7.3` olarak
   kaydedilir.
 - Zaman damgasi `datetime` ile, PNG ciktilari `exportgraphics` ile uretilir.
+- Monte Carlo iterasyonlari `parfor` ile paralel calisir. `run_iterations.m`
+  once daha dusuk bellek kullanan thread havuzunu, desteklenmezse process
+  havuzunu acar; worker sayisini yerel MATLAB profili belirler.
 
 Simulasyon matematigi, config degerleri ve sonuc yapisi ust dizindeki aktif
 surumle aynidir. `correction_factor` uygulanmaz.

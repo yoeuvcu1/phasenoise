@@ -51,8 +51,9 @@ S_dut_sum = zeros(number_of_positive_points, 1);
 %% ---------------- MONTE CARLO ITERATIONS ----------------
 % Kompleks cross spektrumlar önce toplanır, magnitude işlemi ortalamadan sonra
 % yapılır; böylece korelasyonsuz referans bileşenlerinin iptali korunur.
-for iteration = 1:number_of_iterations
-    iteration_timer = tic;
+simulation_timer = tic;
+fprintf("%d iterasyon paralel hesaplaniyor...\n", number_of_iterations);
+parfor iteration = 1:number_of_iterations
 
     % Aynı fiziksel DUT modelinin yeni zaman realizasyonunu oluştur. Bu kayıt iki
     % ölçüm kanalında ortak, Ref1/Ref2 ise birbirinden bağımsız bileşenlerdir.
@@ -73,12 +74,10 @@ for iteration = 1:number_of_iterations
     [~, S_dut_current] = compute_periodogram( ...
         phase_noise_dut_compare, fs, nfft_cross);
     S_dut_sum = S_dut_sum + S_dut_current;
-
-    iteration_seconds = toc(iteration_timer);
-    fprintf("\rIterasyon %d/%d | Iterasyon suresi: %.3f s", ...
-        iteration, number_of_iterations, iteration_seconds);
 end
-fprintf("\n");
+simulation_seconds = toc(simulation_timer);
+fprintf("Iterasyonlar tamamlandi | toplam sure: %.2f s | hiz: %.2f iter/s\n", ...
+    simulation_seconds, number_of_iterations / simulation_seconds);
 
 %% ---------------- CROSS-PSD AVERAGE ----------------
 % DC karşılaştırmaya dahil edilmez. LPF etkisi ayrıca frekans maskesiyle

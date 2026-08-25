@@ -38,6 +38,26 @@ show_figures = true;
 project_dir = fileparts(mfilename("fullpath"));
 addpath(project_dir);
 
+% Monte Carlo iterasyonları birbirinden bağımsızdır. Thread tabanlı havuz,
+% process havuzuna göre daha az RAM kullanır ve büyük sabit dizileri paylaşır.
+if ~license("test", "Distrib_Computing_Toolbox")
+    error(["Parallel Computing Toolbox bulunamadi. Tam CPU kullanimi icin " ...
+        "bu toolbox gereklidir."]);
+end
+pool = gcp("nocreate");
+if isempty(pool)
+    try
+        % Worker sayisini vermemek bilincli: MATLAB her bilgisayarda yerel
+        % profilin kullanabildigi cekirdek sayisini otomatik olarak secer.
+        pool = parpool("Threads");
+    catch thread_pool_error
+        warning("Thread havuzu acilamadi (%s). Process havuzu deneniyor.", ...
+            thread_pool_error.message);
+        pool = parpool("Processes");
+    end
+end
+fprintf("Paralel havuz: %s | worker: %d\n", class(pool), pool.NumWorkers);
+
 run_comparisons_main(default_config, test_values, show_figures, project_dir);
 
 fprintf("\nHazir. Iterasyon sonuclari: %s\n", ...
