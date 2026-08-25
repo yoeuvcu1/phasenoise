@@ -25,9 +25,9 @@ DUT + Ref1/Ref2 üretimi
   -> Butterworth LPF
   -> faz detektörü kazanç normalizasyonu
   -> settling ve DC kaldırma
+  -> /K_pd normalizasyonu ve asin
   -> kompleks Cross-PSD
   -> iterasyon ortalaması
-  -> sin(phi) güç düzeltmesi
   -> log-bin ve DUT periodogramı karşılaştırması
 ```
 
