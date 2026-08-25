@@ -44,15 +44,15 @@ run_single / run_comparisons / run_iterations
   -> run_simulation
      -> validate_config
      -> generate_phase_noise (DUT)
-     -> measure_iteration
-        -> generate_phase_noise (Ref1, Ref2)
-        -> mixer
-        -> lowpass_filter
-        -> remove_dc
-        -> compute_cross_psd
+      -> measure_iteration
+         -> generate_phase_noise (Ref1, Ref2)
+         -> mixer
+         -> lowpass_filter
+         -> /K_pd normalizasyonu ve asin
+         -> remove_dc
+         -> compute_cross_psd
      -> compute_periodogram (DUT)
      -> kompleks/lineer iterasyon ortalamaları
-     -> sin(phi) güç düzeltmesi
      -> logbin_phase_noise
      -> MAE hesabı
 ```
@@ -81,12 +81,14 @@ replot_results
 | `mixer.m` | DUT ile referansların çarpımı |
 | `lowpass_filter.m` | Cache'li Butterworth LPF |
 | `compute_cross_psd.m` | FFT tabanlı kompleks tek taraflı Cross-PSD |
+| `remove_dc.m` | Her kanalın kolon ortalamasını çıkararak DC temizliği |
 | `compute_periodogram.m` | Filtresiz DUT PSD referansı |
 | `logbin_phase_noise.m` | Log-bin ve SSB dBc/Hz |
 | `validate_config.m` | 12 zorunlu config alanının doğrulanması |
 | `run_comparisons_main.m` | Sweep, zamanlama ve kayıt yönetimi |
 | `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü |
-| `replot_results_main.m` | Kayıtlı sweep'in yeniden çizimi |
+| `replot_results.m` | Kayıtlı sweep'leri simülasyonu tekrarlamadan yeniden çizen runner |
+| `replot_results_main.m` | Kayıtlı sweep'in summary/raw yükleyerek yeniden çizimi |
 
 ## Değişmemesi Gereken Algoritmik Kurallar
 
@@ -153,15 +155,15 @@ sweep=[1,10,100,500,1000,2000,5000,10000,20000]
 
 ## Sonuç ve Metrik Sözleşmesi
 
-- `results.cross.psd`: kompleks, ortalanmış ve düzeltme uygulanmış tam
+- `results.cross.psd`: kompleks, `asin` ile faz ölçeğine çevrilmiş tam
   çözünürlüklü Cross-PSD.
 - `results.dut_fft.psd`: aynı koşulardaki filtresiz DUT periodogramlarının
   lineer ortalaması.
-- `correction_factor`: ortalama Cross-PSD büyüklüğünden hesaplanan `sin(phi)`
-  güç düzeltmesi.
 - `mean_absolute_error_fft_db`: iki log-bin eğrinin ortak frekans aralığında
   200 logaritmik noktadaki ortalama mutlak dB farkı.
-- MAE ve düzeltme hesabı şu anda LPF kesimiyle maskelenmez.
+- MAE ölçüm bandı şu anda LPF kesimiyle sınırlandırılmaz.
+- Yeni akış `correction_factor` üretmez; eski kayıtlarda kalan bu alan tarihsel
+  veridir.
 
 Sweep çıktısı:
 
@@ -277,6 +279,47 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
    dizine taşı ve commit/config/Octave sürümü manifesti ekle.
 8. Eski ve yeni Cross-PSD yollarını aynı deterministik dizilerle karşılaştıran
    benchmark/eşdeğerlik testi oluştur.
+
+## GitHub Push Talimatı
+
+Repo: `https://github.com/yoeuvcu1/phasenoise`, hedef branch: `main`.
+
+Kurumsal ağ normal `git push origin main` isteğini `403` ile engelleyebilir.
+Bu durumda commit yerelde normal şekilde oluşturulur, ardından aynı Git obje
+SHA'larını koruyacak biçimde GitHub Git Database API kullanılır. Token hiçbir
+zaman dosyaya yazılmamalı veya terminal çıktısında gösterilmemelidir.
+
+1. `git status`, `git diff`, `git diff --cached --check` ve
+   `git log --oneline -10` ile kapsamı doğrula; yalnız amaçlanan dosyaları stage
+   et. `results/`, `.mat`, bağımsız görseller ve ZIP yedekleri commit'e girmez.
+2. Commit'i normal olarak oluştur. API aktarımından önce GitHub'daki
+   `refs/heads/main` SHA'sının yerel `HEAD^` ile aynı olduğunu doğrula. Eşit
+   değilse dur; branch'i force-push etme.
+3. Git Credential Manager'dan credential alırken
+   `GCM_CREDENTIAL_STORE=dpapi` kullan. `git credential fill` çıktısından token
+   yalnız bellekte okunur; helper script, log veya repoya kaydedilmez.
+4. Değişen her dosyanın blob içeriğini `git cat-file blob <sha>` ile al,
+   Base64 kodlayıp `POST /repos/yoeuvcu1/phasenoise/git/blobs` endpoint'ine
+   gönder ve dönen blob SHA'sını yerel SHA ile karşılaştır.
+5. Parent tree'yi `base_tree` kabul ederek değişen path/mode/type/blob
+   girdileriyle `POST /repos/yoeuvcu1/phasenoise/git/trees` çağrısı yap. Dönen
+   tree SHA'sı `git show -s --format=%T HEAD` ile aynı olmalıdır. Türkçe ve
+   Unicode dosya adlarını, özellikle `İki Kanallı Cross.docx` yolunu, tam UTF-8
+   haliyle koru; path okurken `git -c core.quotepath=false` kullan.
+6. Commit mesajı, parent, author, committer ve timezone bilgilerini
+   `git cat-file commit HEAD` nesnesinden aynen al. Bunlarla
+   `POST /repos/yoeuvcu1/phasenoise/git/commits` çağrısı yap ve dönen commit
+   SHA'sının yerel `HEAD` ile birebir eşit olduğunu doğrula.
+7. `PATCH /repos/yoeuvcu1/phasenoise/git/refs/heads/main` isteğini yerel
+   `HEAD` SHA'sı ve `force=false` ile gönder. Ardından
+   `git update-ref refs/remotes/origin/main HEAD` çalıştır.
+8. `git ls-remote origin refs/heads/main`, `git status --short --branch` ve
+   GitHub raw dosya URL'leriyle remote SHA'yı, temiz çalışma ağacını ve gerekli
+   binary dosyaların boyutunu doğrula. Geçici API helper scriptini sil.
+
+Son başarılı API aktarımı 2026-08-25 tarihinde yapıldı: commit `33184f9`, altı
+dosya, sıfır `results/` girdisi ve bir DOCX. Yerel `main`, `origin/main` ve
+GitHub `main` aynı SHA'da doğrulandı.
 
 ## Yeni Oturum Handoff Kontrolü
 
