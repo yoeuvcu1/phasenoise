@@ -6,7 +6,7 @@
 
 %% ---------------- FIXED SIMULATION PARAMETERS ----------------
 default_config = struct();
-default_config.N = 100000;                 % Örnek sayısı
+default_config.N = 1000000;                 % Örnek sayısı
 default_config.fs = 1e6;                   % Örnekleme frekansı (Hz)
 default_config.A = 1;                      % Taşıyıcı genliği
 default_config.f0 = 200e3;                 % Taşıyıcı frekansı (Hz)
@@ -20,7 +20,7 @@ default_config.number_of_iterations = 100;  % Grafikte (orig) işaretlenecek de�
 default_config.number_of_log_bins = 100;    % Logaritmik bin sayısı
 
 %% ---------------- ITERATION SWEEP VALUES ----------------
-iteration_values = [1, 10, 100, 500, 1000, 2000, 5000, 10000, 20000];
+iteration_values = [1, 50, 250, 500, 1000, 2000, 5000, 10000, 20000];
 % Daha kısa deneme için alternatif: iteration_values = [1, 10, 50, 100, 200, 500];
 
 %% ---------------- RUN ITERATION SWEEP ----------------
@@ -51,7 +51,8 @@ if isempty(pool)
         % profilin kullanabildigi cekirdek sayisini otomatik olarak secer.
         pool = parpool("Threads");
     catch thread_pool_error
-        warning("Thread havuzu acilamadi (%s). Process havuzu deneniyor.", ...
+        warning("phaseNoise:ThreadPoolUnavailable", ...
+            "Thread havuzu acilamadi (%s). Process havuzu deneniyor.", ...
             thread_pool_error.message);
         pool = parpool("Processes");
     end

@@ -3,6 +3,23 @@
 Bu dosya projenin güncel kronolojik değişiklik kaydıdır. Ayrıntılı kullanım
 için kök `README.md`, oturum handoff'u için `MEMORY_BANK.md` kullanılır.
 
+## 2026-08-26: Dekad Bazlı MAE Raporlaması
+
+- `decade_band_errors.m` eklendi: tam bant MAE ile aynı ortak ızgara ve
+  interpolasyon kuralını kullanarak farkı dekad bantlarında ayrı ortalar.
+  Bant değerlerinin nokta sayısıyla ağırlıklı ortalaması tam bant MAE'ye eşittir.
+- `plot_sweep_results.m` her dekadın geometrik ortasında, eğrilerin üzerine o
+  dekadın MAE değerini yazar; log eksende bu noktalar eşit aralıklıdır. Etiketler
+  kırpılmasın diye üst eksen sınırı açıldı, başlıktaki tam bant MAE korundu.
+- `export_decade_errors.m` eklendi: kayıtlı bir taramanın dekad tablosunu
+  ekrana yazar ve koşu klasörüne `decade_mae.csv` olarak kaydeder.
+- Bir dekadın yarısından dar kalan uç bantlar raporlanmaz; 50 kHz koşusunda
+  0,48 – 1 Hz parçası (0,32 dekad) bu kuralla düşerken 100 – 467 kHz korunur.
+- Değişiklikler hem Octave hem MATLAB kopyasına aynı biçimde uygulandı;
+  simülasyon matematiği ve sonuç sözleşmesi değişmedi.
+- Rapor 8.6 bölümü 50 kHz kesim frekanslı iterasyon koşusunun dekad tablosuyla
+  yeniden düzenlendi.
+
 ## 2026-08-25: Akış Sadeleştirme ve Temizlik
 
 - Octave ve MATLAB ölçüm akışlarında `asin`, LPF ve `K_pd`

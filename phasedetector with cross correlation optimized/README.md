@@ -172,7 +172,9 @@ noktası bırakmalıdır. Ayrıntılı kurallar `validate_config.m` içindedir.
 | `logbin_phase_noise.m` | Pozitif frekans log-bin ve dBc/Hz dönüşümü |
 | `remove_dc.m` | Kolon ortalamasını çıkarır |
 | `run_comparisons_main.m` | Sweep yürütme, zamanlama ve kayıt yönetimi |
-| `plot_sweep_results.m` | Ortak eksenli subplot karşılaştırması ve PNG |
+| `plot_sweep_results.m` | Ortak eksenli subplot karşılaştırması, eğri üstü dekad MAE etiketleri ve PNG |
+| `decade_band_errors.m` | Ortak ızgarada dekad bandı başına MAE |
+| `export_decade_errors.m` | Kayıtlı taramanın dekad MAE tablosu ve CSV çıktısı |
 | `replot_results_main.m` | Summary/raw dosyalarını yükleyip yeniden çizme |
 
 ## Sonuç Sözleşmesi

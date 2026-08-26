@@ -86,7 +86,9 @@ replot_results
 | `logbin_phase_noise.m` | Log-bin ve SSB dBc/Hz |
 | `validate_config.m` | 12 zorunlu config alanının doğrulanması |
 | `run_comparisons_main.m` | Sweep, zamanlama ve kayıt yönetimi |
-| `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü |
+| `plot_sweep_results.m` | Ortak ölçekli karşılaştırma figürü ve eğri üstü dekad MAE etiketleri |
+| `decade_band_errors.m` | Aynı MAE farkının dekad bantlarında ayrı ortalaması |
+| `export_decade_errors.m` | Kayıtlı taramanın dekad MAE tablosu ve `decade_mae.csv` |
 | `replot_results.m` | Kayıtlı sweep'leri simülasyonu tekrarlamadan yeniden çizen runner |
 | `replot_results_main.m` | Kayıtlı sweep'in summary/raw yükleyerek yeniden çizimi |
 
@@ -241,12 +243,19 @@ sürümü, signal paket sürümü veya RNG seed dizisini içermez.
 - Kök `İki Kanallı Cross.docx` güncel tek rapor olarak yenilendi.
 - MATLAB Monte Carlo döngüsü `parfor` ile paralelleştirildi;
   `run_iterations.m` thread havuzunu, gerekirse process havuzunu otomatik açar.
+- MATLAB `generate_phase_noise` RNG başlatması `rng("shuffle")` yerine
+  `threefry` stream'i ve saat + `tic` sayacı + varsayılan worker stream'inden
+  çekim XOR'u ile kurulan seed'e geçirildi. Worker'lar eşzamanlı başlayıp aynı
+  saat seed'ini alsa bile iterasyonlar kopyalanmaz. Worker kimliği
+  kullanılmıyor; `getCurrentTask` thread tabanlı havuzda desteklenmiyor.
 
 ## Bilinen Riskler
 
-1. **RNG yeniden üretilebilir değil.** `generate_phase_noise` her çağrıda
-   global RNG'yi zaman tabanlı seed ile sıfırlar. Seed alanı yalnız 100000
-   değerdir ve kaydedilmez.
+1. **RNG yeniden üretilebilir değil.** Octave `generate_phase_noise` her
+   çağrıda global RNG'yi zaman tabanlı seed ile sıfırlar; seed alanı yalnız
+   100000 değerdir ve kaydedilmez. MATLAB tarafı tek stream + worker substream
+   kullandığı için istatistiksel olarak daha sağlamdır, fakat seçilen seed yine
+   kaydedilmez.
 2. **Bağımsızlık doğrulanmadı.** Ref1 ve Ref2 ayrı çağrılardır ancak seed
    çakışmasına karşı otomatik korelasyon testi yoktur.
 3. **Metrik bandı geniş.** MAE, LPF dışındaki bastırılmış bölgeyi de kapsar.

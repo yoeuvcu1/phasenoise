@@ -68,6 +68,7 @@ aktif klasör README'sindeki küçük doğrudan API örneğini kullanın.
 | `run_comparisons.m` | LPF, RMS, iterasyon ve log-bin taramaları | `results/` altında MAT, CSV ve PNG |
 | `run_iterations.m` | Büyük iterasyon sayısı taraması | `results/` altında MAT, CSV ve PNG |
 | `replot_results.m` | Kayıtlı bir sweep'i simülasyonsuz yeniden çizer | Karşılaştırma PNG'si |
+| `export_decade_errors.m` | Kayıtlı bir sweep'in dekad bazlı MAE tablosu | `results/<koşu>/decade_mae.csv` |
 | `run_simulation.m` | Programatik API: `results = run_simulation(config)` | Yok |
 
 Parametre şeması, üç giriş betiğinin farklı varsayılan profilleri, çıktı

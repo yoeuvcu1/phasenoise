@@ -10,13 +10,25 @@ if mod(N, 2) ~= 0
 end
 
 %% ---------------- WHITE NOISE SOURCE ----------------
-% MATLAB'in global random stream'ini ilk çağrıda saat tabanlı başlat. Her DUT,
-% Ref1 ve Ref2 çağrısı aynı stream'den ardışık yeni örnekler alır; hızlı
-% çağrılarda zaman tabanlı aynı seed'e dönme riski böylece önlenir. İstatistiksel
-% bağımsızlık ayrıca otomatik bir kabul testiyle doğrulanmamaktadır.
+% MATLAB'in global random stream'ini ilk çağrıda başlat. Her DUT, Ref1 ve Ref2
+% çağrısı aynı stream'den ardışık yeni örnekler alır.
+% parfor altında persistent değişken her worker'da ayrıdır ve worker'lar aynı
+% anda başladığı için tek başına saat tabanlı seed çakışabilir. Thread tabanlı
+% havuzda worker kimliği (getCurrentTask) okunamadığından seed üç bağımsız
+% kaynağın XOR'u olarak kurulur: saat tabanlı shuffle seed'i, yüksek
+% çözünürlüklü dahili sayaç ve worker'ın varsayılan stream'inden alınan bir
+% çekim. threefry sayaç tabanlı olduğundan farklı seed'ler istatistiksel olarak
+% bağımsız diziler üretir. Bağımsızlık ayrıca otomatik bir kabul testiyle
+% doğrulanmamaktadır.
 persistent rng_initialized;
 if isempty(rng_initialized)
-    rng("shuffle");
+    shuffled_stream = RandStream("threefry", "Seed", "shuffle");
+    clock_seed = uint64(shuffled_stream.Seed);
+    counter_seed = uint64(tic);
+    worker_seed = uint64(randi(intmax("uint32")));
+    combined_seed = bitxor(bitxor(clock_seed, counter_seed), worker_seed);
+    combined_seed = double(mod(combined_seed, uint64(intmax("uint32"))));
+    RandStream.setGlobalStream(RandStream("threefry", "Seed", combined_seed));
     rng_initialized = true;
 end
 white = randn(N, 1);
