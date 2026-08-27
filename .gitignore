@@ -11,8 +11,10 @@
 !*.yaml
 !*.yml
 !*.docx
+!*.pptx
 !**/report_assets/figures/*.png
 ~$*.docx
+~$*.pptx
 * - Copy.docx
 !.gitignore
 

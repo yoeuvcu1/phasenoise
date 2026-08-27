@@ -20,8 +20,12 @@ C_OK        = "#34D399"   # olumlu vurgu
 C_WARN      = "#FB923C"   # uyarı vurgusu
 C_GOLD      = "#F5C542"   # başlık vurgusu
 
-FONT = "Avenir Next"
-MONO = "SF Mono"
+FONT = "Arial"
+MONO = "Consolas"
+
+# Her animasyon sonrası eklenen bekleme payı (saniye). Sahnede bir şeyin
+# anlatılmasına zaman tanımak için küresel olarak uygulanır.
+ANIM_PAUSE = 0.6
 
 # ---------------- TİPOGRAFİ ----------------
 def H1(s, size=44, color=INK, weight=BOLD):
@@ -77,6 +81,11 @@ class Slide(Scene):
     def govde(self):
         """Başlık altındaki kullanılabilir alanın üst kenarı."""
         return self.chrome[-1].get_bottom()[1] - 0.35
+
+    def play(self, *args, **kwargs):
+        """play() çağrısının ardına otomatik olarak bir bekleme ekler."""
+        super().play(*args, **kwargs)
+        super().play(Wait(ANIM_PAUSE), run_time=ANIM_PAUSE)
 
 
 # ---------------- YARDIMCI BİLEŞENLER ----------------
