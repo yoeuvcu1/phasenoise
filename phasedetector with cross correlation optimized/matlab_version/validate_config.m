@@ -17,6 +17,17 @@ for field_index = 1:numel(required_fields)
     end
 end
 
+%% ---------------- OPTIONAL PHASE-DETECTOR OFFSET ----------------
+% phase_offset_deg verilmezse run_simulation eski quadrature davranisini (90
+% dereceyi) kullanir. Verildiginde sonlu, gercek ve skaler olmalidir.
+if isfield(config, "phase_offset_deg")
+    phase_offset_deg = config.phase_offset_deg;
+    if ~isnumeric(phase_offset_deg) || ~isscalar(phase_offset_deg) || ...
+            ~isreal(phase_offset_deg) || ~isfinite(phase_offset_deg)
+        error("config.phase_offset_deg sonlu, gercek ve skaler olmalidir.");
+    end
+end
+
 %% ---------------- NUMERIC VALUE CHECKS ----------------
 % Vektör, kompleks, NaN ve Inf değerler filtre/FFT boyutlarını bozacağı için reddedilir.
 for field_index = 1:numel(required_fields)

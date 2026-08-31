@@ -1,5 +1,5 @@
 function S_cross_iteration = measure_iteration( ...
-    x_dut, A, quadrature_phase, ...
+    x_dut, A, reference_phase, ...
     phase_rms_ref1, phase_rms_ref2, ...
     fs, lpf_cutoff, lpf_order, K_pd, settling_samples, nfft_cross)
 % Tek bir iterasyonda iki referansla cross-PSD ölçümünü döndürür.
@@ -14,9 +14,10 @@ N = length(x_dut);
 phase_noise_ref1 = generate_phase_noise(N, phase_rms_ref1);
 phase_noise_ref2 = generate_phase_noise(N, phase_rms_ref2);
 
-% Referans taşıyıcıları DUT'ye göre 90 derece faz kaydırılmış merkez fazda kur.
-x_ref1 = A*cos(quadrature_phase + phase_noise_ref1);
-x_ref2 = A*cos(quadrature_phase + phase_noise_ref2);
+% Referans taşıyıcıları DUT'ye göre istenen merkez faz farkında kurulur.
+% 90 derecede bu klasik quadrature faz dedektörüdür.
+x_ref1 = A*cos(reference_phase + phase_noise_ref1);
+x_ref2 = A*cos(reference_phase + phase_noise_ref2);
 
 %% ---------------- MIXER ----------------
 % İki bağımsız referansı kolonlarda birleştir; mixer her referansı ortak DUT

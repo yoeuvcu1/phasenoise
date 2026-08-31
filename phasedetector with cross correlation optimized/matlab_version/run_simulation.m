@@ -23,13 +23,20 @@ phase_rms_ref1 = config.phase_rms_ref1;
 phase_rms_ref2 = config.phase_rms_ref2;
 number_of_iterations = config.number_of_iterations;
 number_of_log_bins = config.number_of_log_bins;
+% Faz dedektorundeki DUT--referans merkez faz farki. Alan verilmezse eski
+% davranisi korumak icin quadrature (90 derece) kullanilir.
+if isfield(config, "phase_offset_deg")
+    phase_offset_deg = config.phase_offset_deg;
+else
+    phase_offset_deg = 90;
+end
 
 %% ---------------- CARRIER TIME BASE ----------------
-% Taşıyıcı zaman tabanı ve referansların quadrature merkez fazı bütün
-% iterasyonlarda aynıdır; rastgele DUT/Ref faz realizasyonları döngüde yenilenir.
+% Taşıyıcı zaman tabanı ve referansların merkez faz farkı bütün iterasyonlarda
+% aynıdır; rastgele DUT/Ref faz realizasyonları döngüde yenilenir.
 t = (0:N-1)' / fs;
 carrier_phase = 2*pi*f0*t;
-quadrature_phase = carrier_phase + pi/2;
+reference_phase = carrier_phase + deg2rad(phase_offset_deg);
 
 %% ---------------- PHASE DETECTOR GAIN ----------------
 % Çarpım faz detektörünün LPF çıkışını sin(faz hatası) ölçeğine getiren kazanç.
@@ -61,7 +68,7 @@ parfor iteration = 1:number_of_iterations
     x_dut = A*cos(carrier_phase + phase_noise_dut);
 
     S_cross_current = measure_iteration( ...
-        x_dut, A, quadrature_phase, ...
+        x_dut, A, reference_phase, ...
         phase_rms_ref1, phase_rms_ref2, ...
         fs, lpf_cutoff, lpf_order, K_pd, settling_samples, nfft_cross);
 
@@ -138,6 +145,7 @@ fprintf("Ortalama mutlak fark (Cross-PSD - unfiltered DUT): %.3f dB\n", ...
 % Tam çözünürlüklü spektrumlar replot/inceleme için, binned alanlar doğrudan
 % grafik çizmek için saklanır.
 results.config = config;
+results.config.phase_offset_deg = phase_offset_deg;
 results.mean_absolute_error_fft_db = mean_absolute_error_fft_db;
 results.cross.frequency = f_cross;
 results.cross.psd = S_cross_average;
