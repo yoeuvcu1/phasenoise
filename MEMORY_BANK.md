@@ -22,12 +22,12 @@ phasedetector with cross correlation optimized/
 Kurallar:
 
 - Yeni kod ve deney yalnız aktif klasörde yapılır.
-- `phasedetector with cross correlation/` legacy referanstır; açık istek
+- `archive/phasedetector with cross correlation/` legacy referanstır; açık istek
   olmadan değiştirilmez.
-- Kök `AWGN.m`, `phasenoise.m`, `pinknoise.m` ve benzeri dosyalar aktif akışın
-  runtime bağımlılığı değildir.
+- Eski kök `*.m` ve sunum artefaktları `archive/root_scripts/` ve `archive/root_extras/` altındadır; aktif akışın parçası değildir.
 - `results/`, `.mat`, görseller ve ZIP yedekleri Git'e gönderilmez.
 - `.opencode/` opsiyonel geliştirme aracıdır; simülasyon bağımlılığı değildir.
+- `make_presentation_plots` fonksiyonu kaldırıldı; sunum için `sunum/` kullanılır.
 
 ## Projenin Amacı
 

@@ -84,15 +84,19 @@ bakın.
 ├── MEMORY_BANK.md
 ├── CHANGES.md
 ├── phasedetector with cross correlation optimized/   # aktif uygulama
-├── phasedetector with cross correlation/             # legacy referans
-├── *.m                                               # eski/bağımsız deney araçları
+├── archive/                                         # legacy ve eski deneyler
+│   ├── phasedetector with cross correlation/         # legacy referans
+│   ├── phasedetector with cross correlation optimized/ # 2026-08-28 öncesi kopya
+│   ├── root_scripts/  (*.m) / root_extras/
+│   └── README.md
+├── sunum/
 └── .opencode/                                        # opsiyonel geliştirme desteği
 ```
 
 - `MEMORY_BANK.md`: sonraki çalışma oturumu için güncel durum, kararlar,
   riskler ve öncelikli işler.
 - `CHANGES.md`: projenin kronolojik değişiklik kaydı.
-- Kök `*.m` dosyaları aktif optimize akışın runtime bağımlılığı değildir.
+- `archive/` runtime bağımlılığı değildir; sunum fonksiyonu `make_presentation_plots` kaldırıldı.
 - `.opencode/` opsiyonel araç dokümanıdır; simülasyonu çalıştırmak için gerekli
   değildir.
 
